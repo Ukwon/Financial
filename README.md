@@ -1,21 +1,28 @@
 ﻿# Financial
 
-App desktop de financas pessoais 100% local (offline-first), sem servidor.
+Aplicativo desktop de finanças pessoais 100% local (offline-first), sem servidor.
 
-## Visao geral
+## Instalação (Windows)
 
-O Financial foi pensado para organizar a vida financeira mensal com foco em:
+Baixe e instale a versão mais recente:
 
-- transacoes reais (receitas e despesas)
+- **Página de releases:** https://github.com/Ukwon/Financial/releases
+- **Download direto do instalador (`.exe`):** https://github.com/Ukwon/Financial/releases/download/v0.1.0/Financial.Setup.0.1.0.exe
+
+## Visão geral
+
+O Financial foi criado para organizar a vida financeira mensal com foco em:
+
+- transações reais (receitas e despesas)
 - fixos mensais
 - planos recorrentes e parcelados
-- metas com aportes e participacao por pessoa
-- projecao futura com limite de gasto seguro
+- metas com aportes e participação por pessoa
+- projeção futura com limite de gasto seguro
 - simulador de investimentos
-- tags para classificacao de gastos
+- tags para classificação de gastos
 - backup e restore local
 
-## Stack
+## Tecnologias
 
 - Electron (main + preload)
 - React + Vite (renderer)
@@ -26,7 +33,7 @@ O Financial foi pensado para organizar a vida financeira mensal com foco em:
 
 - Renderer: interface React
 - Preload: API segura via `window.api`
-- Main: regras, IPC e persistencia
+- Main: regras, IPC e persistência
 - Fluxo: `React -> window.api -> IPC -> Main -> Prisma/SQLite`
 
 ## Requisitos
@@ -43,7 +50,7 @@ npm run prisma:generate
 npm run dev
 ```
 
-## Build de producao
+## Build de produção
 
 ```bash
 npm run build
@@ -64,54 +71,45 @@ Arquivos gerados:
 
 - Banco: SQLite
 - Local do arquivo: `app.getPath("userData")/financial.db`
-- Migrations: aplicadas na inicializacao do app
+- Migrations: aplicadas na inicialização do app
 
 ## Backup e restore
 
-- No app, abra Configuracoes (icone de engrenagem).
+- No app, abra **Configurações** (ícone de engrenagem).
 - `Exportar`: gera um arquivo JSON com os dados.
 - `Restaurar`: substitui os dados atuais pelos dados do backup selecionado.
 
 ## Scripts principais
 
 - `npm run dev`: Vite + Electron em paralelo
-- `npm run build:renderer`: build apenas do front
-- `npm run build`: renderer + prisma generate + icone
+- `npm run build:renderer`: build apenas do front-end
+- `npm run build`: renderer + prisma generate + ícone
 - `npm run dist:win`: build + instalador NSIS
-- `npm run pack:win`: build + versao portable
+- `npm run pack:win`: build + versão portátil
 - `npm run test`: testes Node
 - `npm run prisma:migrate`: migration em desenvolvimento
 - `npm run prisma:deploy`: aplicar migrations existentes
 
 ## Estrutura resumida
 
-- `main/`: processo principal, IPC, regras e servicos
+- `main/`: processo principal, IPC, regras e serviços
 - `renderer/`: interface React
 - `prisma/`: schema e migrations
 - `generated/prisma-client/`: client Prisma gerado
-- `assets/`: icones e arquivos estaticos
-- `release/`: artefatos de build/instalacao
+- `assets/`: ícones e arquivos estáticos
+- `release/`: artefatos de build/instalação
 
 ## Modelo de dados (resumo)
 
 - `Wallet`: carteiras
 - `Tag`: tags por carteira
-- `MonthlyTagBudget`: orcamento por tag
-- `Transaction`: lancamentos reais
-- `Plan`: regras de recorrencia/parcelamento
-- `PlanOccurrence`: ocorrencias futuras
+- `MonthlyTagBudget`: orçamento por tag
+- `Transaction`: lançamentos reais
+- `Plan`: regras de recorrência/parcelamento
+- `PlanOccurrence`: ocorrências futuras
 - `Goal`: metas financeiras
 - `GoalAllocation`: aportes e retiradas em metas
 
-## Publicacao no GitHub (manual)
+## Licença
 
-1. Commit e push do codigo no repositorio.
-2. Criar uma release (ex.: `v0.1.0`).
-3. Anexar o instalador:
-   - `release/Financial Setup 0.1.0.exe`
-4. Opcional: anexar tambem:
-   - `release/Financial Setup 0.1.0.exe.blockmap`
-
-## Licenca
-
-Definir.
+A definir.
