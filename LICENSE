@@ -1,21 +1,56 @@
-MIT License
+Financial - Proprietary License (All Rights Reserved)
+Version 1.0
+Effective date: 2026-03-04
 
-Copyright (c) 2026 Eduardo Bromatti Monteiro
+Copyright (c) 2026 Eduardo Brumatti Monteiro
+All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Grant of permission (limited)
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+You are allowed to:
+- download and use this software for personal, non-commercial purposes;
+- make local backups for personal use;
+- study the source code for personal learning.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. Restrictions
+
+Without prior written authorization from the copyright holder, you may not:
+- sell, resell, rent, lease, sublicense, or commercially exploit this software;
+- distribute binaries or source code publicly or privately;
+- offer this software as a service (SaaS), hosted solution, or paid support package;
+- modify and redistribute derivative works;
+- remove or alter copyright, ownership, or attribution notices.
+
+3. Commercial use and distribution
+
+Any commercial use, redistribution, sublicensing, white-labeling, or integration
+into paid products/services requires an explicit written license agreement from
+the copyright holder.
+
+4. Ownership
+
+This software is licensed, not sold. No ownership rights are transferred.
+All intellectual property rights remain exclusively with the copyright holder.
+
+5. No warranty
+
+This software is provided "as is", without warranty of any kind, express or implied,
+including but not limited to merchantability, fitness for a particular purpose, and
+non-infringement.
+
+6. Limitation of liability
+
+In no event shall the copyright holder be liable for any claim, damages, or other
+liability, whether in an action of contract, tort, or otherwise, arising from, out of,
+or in connection with the software or the use or other dealings in the software.
+
+7. Termination
+
+Any violation of this license immediately terminates your rights under this license.
+Upon termination, you must stop using and destroy all copies in your possession.
+
+8. Contact for commercial licensing
+
+To request commercial licensing or redistribution permissions, contact:
+Eduardo Brumatti Monteiro
+

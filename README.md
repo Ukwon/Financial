@@ -112,4 +112,9 @@ Arquivos gerados:
 
 ## Licença
 
-A definir.
+Licença proprietária (All Rights Reserved).
+
+- Uso pessoal (não comercial): permitido.
+- Uso comercial, revenda, redistribuição e sublicenciamento: proibidos sem autorização expressa por escrito.
+
+Consulte o arquivo `LICENSE` para os termos completos.
