@@ -11,7 +11,7 @@ Baixe e instale a versão mais recente:
 
 ## Demonstração visual
 
-![Tela principal do Financial](assets/screenshots/financial-dashboard.png)
+![Tela principal do Financial](assets/screenshots/financial-dashboard-app.png)
 
 ## Visão geral
 
