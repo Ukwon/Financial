@@ -9,6 +9,10 @@ Baixe e instale a versão mais recente:
 - **Página de releases:** https://github.com/Ukwon/Financial/releases
 - **Download direto do instalador (`.exe`):** https://github.com/Ukwon/Financial/releases/download/v0.1.0/Financial.Setup.0.1.0.exe
 
+## Demonstração visual
+
+![Tela principal do Financial](assets/screenshots/financial-dashboard.png)
+
 ## Visão geral
 
 O Financial foi criado para organizar a vida financeira mensal com foco em:
