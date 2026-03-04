@@ -1,0 +1,91 @@
+{
+  "name": "financial",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal finance desktop app (100% local) with Electron, React, Prisma and SQLite",
+  "main": "main/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"vite --config renderer/vite.config.js\" \"wait-on tcp:5173 && node scripts/start-electron.js\"",
+    "build:renderer": "vite build --config renderer/vite.config.js",
+    "build": "npm run build:renderer && npm run prisma:generate && npm run icon:win",
+    "test": "node --test tests/*.test.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --schema prisma/schema.prisma",
+    "prisma:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
+    "start": "node scripts/start-electron.js",
+    "icon:win": "node scripts/generate-icon-ico.js",
+    "dist:win": "npm run build && electron-builder --win nsis",
+    "pack:win": "npm run build && electron-builder --win portable"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.1",
+    "recharts": "^2.15.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.1",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.2",
+    "electron": "^35.0.0",
+    "electron-builder": "^26.0.12",
+    "png-to-ico": "^2.1.8",
+    "postcss": "^8.5.3",
+    "prisma": "^6.4.1",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.2.0",
+    "wait-on": "^8.0.2"
+  },
+  "build": {
+    "appId": "com.financial.desktop",
+    "productName": "Financial",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "main/**/*",
+      "renderer/dist/**/*",
+      "generated/prisma-client/**/*",
+      "prisma/migrations/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "**/*.node"
+    ],
+    "extraResources": [
+      {
+        "from": "node_modules/.prisma/client",
+        "to": ".prisma/client",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "app-icon.png",
+          "app-icon.ico"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico"
+    }
+  }
+}

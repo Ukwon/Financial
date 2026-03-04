@@ -1,0 +1,2 @@
+ALTER TABLE "Goal"
+ADD COLUMN "participantCount" INTEGER NOT NULL DEFAULT 1;

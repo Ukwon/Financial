@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma-client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+}
+
+enum PlanType {
+  INSTALLMENT
+  RECURRING
+}
+
+enum RecurrenceUnit {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model Wallet {
+  id           String        @id @default(cuid())
+  name         String
+  description  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+  plans        Plan[]
+  goals        Goal[]
+  tags         Tag[]
+  tagBudgets   MonthlyTagBudget[]
+}
+
+model Category {
+  id           String        @id @default(cuid())
+  name         String
+  kind         TransactionType
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  transactions Transaction[]
+  plans        Plan[]
+
+  @@unique([name, kind])
+}
+
+model Transaction {
+  id               String            @id @default(cuid())
+  walletId         String
+  categoryId       String?
+  type             TransactionType
+  description      String?
+  amountCents      Int
+  dueDate          DateTime
+  paidAt           DateTime?
+  sourcePlanId     String?
+  installmentIndex Int?
+  installmentTotal Int?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  wallet           Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  category         Category?         @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  sourcePlan       Plan?             @relation("PlanTransactions", fields: [sourcePlanId], references: [id], onDelete: SetNull)
+  goalAllocations  GoalAllocation[]
+  tags             TransactionTag[]
+
+  @@index([walletId, dueDate])
+  @@index([type, dueDate])
+}
+
+model Tag {
+  id          String            @id @default(cuid())
+  walletId    String
+  name        String
+  color       String            @default("#38bdf8")
+  isArchived  Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  wallet      Wallet            @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  transactions TransactionTag[]
+  plans       PlanTag[]
+  budgets     MonthlyTagBudget[]
+
+  @@unique([walletId, name])
+  @@index([walletId, isArchived])
+}
+
+model TransactionTag {
+  transactionId String
+  tagId         String
+  createdAt     DateTime    @default(now())
+  transaction   Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tag           Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+  @@index([tagId])
+}
+
+model MonthlyTagBudget {
+  id         String   @id @default(cuid())
+  walletId   String
+  tagId      String
+  monthKey   String
+  limitCents Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  wallet     Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([walletId, tagId, monthKey])
+  @@index([walletId, monthKey])
+}
+
+model Plan {
+  id               String           @id @default(cuid())
+  walletId         String
+  categoryId       String?
+  type             PlanType
+  transactionType  TransactionType
+  description      String?
+  amountCents      Int
+  startDate        DateTime
+  endDate          DateTime?
+  intervalValue    Int              @default(1)
+  recurrenceUnit   RecurrenceUnit?
+  installments     Int?
+  isActive         Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  wallet           Wallet           @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  category         Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  occurrences      PlanOccurrence[]
+  transactions     Transaction[]    @relation("PlanTransactions")
+  tags             PlanTag[]
+
+  @@index([walletId, isActive])
+}
+
+model PlanTag {
+  planId     String
+  tagId      String
+  createdAt  DateTime @default(now())
+  plan       Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+  tag        Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([planId, tagId])
+  @@index([tagId])
+}
+
+model PlanOccurrence {
+  id          String   @id @default(cuid())
+  planId      String
+  dueDate     DateTime
+  amountCents Int
+  isGenerated Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  plan        Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, dueDate])
+  @@index([dueDate])
+}
+
+model Goal {
+  id              String           @id @default(cuid())
+  walletId        String
+  name            String
+  targetCents     Int
+  participantCount Int             @default(1)
+  targetDate      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  wallet          Wallet           @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  allocations     GoalAllocation[]
+
+  @@index([walletId])
+}
+
+model GoalAllocation {
+  id            String       @id @default(cuid())
+  goalId        String
+  transactionId String?
+  amountCents   Int
+  allocatedAt   DateTime     @default(now())
+  note          String?
+  goal          Goal         @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  transaction   Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([goalId, allocatedAt])
+}
