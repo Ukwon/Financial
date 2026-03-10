@@ -12519,11 +12519,13 @@ export namespace Prisma {
 
   export type GoalAvgAggregateOutputType = {
     targetCents: number | null
+    initialAmountCents: number | null
     participantCount: number | null
   }
 
   export type GoalSumAggregateOutputType = {
     targetCents: number | null
+    initialAmountCents: number | null
     participantCount: number | null
   }
 
@@ -12532,6 +12534,7 @@ export namespace Prisma {
     walletId: string | null
     name: string | null
     targetCents: number | null
+    initialAmountCents: number | null
     participantCount: number | null
     targetDate: Date | null
     createdAt: Date | null
@@ -12543,6 +12546,7 @@ export namespace Prisma {
     walletId: string | null
     name: string | null
     targetCents: number | null
+    initialAmountCents: number | null
     participantCount: number | null
     targetDate: Date | null
     createdAt: Date | null
@@ -12554,6 +12558,7 @@ export namespace Prisma {
     walletId: number
     name: number
     targetCents: number
+    initialAmountCents: number
     participantCount: number
     targetDate: number
     createdAt: number
@@ -12564,11 +12569,13 @@ export namespace Prisma {
 
   export type GoalAvgAggregateInputType = {
     targetCents?: true
+    initialAmountCents?: true
     participantCount?: true
   }
 
   export type GoalSumAggregateInputType = {
     targetCents?: true
+    initialAmountCents?: true
     participantCount?: true
   }
 
@@ -12577,6 +12584,7 @@ export namespace Prisma {
     walletId?: true
     name?: true
     targetCents?: true
+    initialAmountCents?: true
     participantCount?: true
     targetDate?: true
     createdAt?: true
@@ -12588,6 +12596,7 @@ export namespace Prisma {
     walletId?: true
     name?: true
     targetCents?: true
+    initialAmountCents?: true
     participantCount?: true
     targetDate?: true
     createdAt?: true
@@ -12599,6 +12608,7 @@ export namespace Prisma {
     walletId?: true
     name?: true
     targetCents?: true
+    initialAmountCents?: true
     participantCount?: true
     targetDate?: true
     createdAt?: true
@@ -12697,6 +12707,7 @@ export namespace Prisma {
     walletId: string
     name: string
     targetCents: number
+    initialAmountCents: number
     participantCount: number
     targetDate: Date | null
     createdAt: Date
@@ -12727,6 +12738,7 @@ export namespace Prisma {
     walletId?: boolean
     name?: boolean
     targetCents?: boolean
+    initialAmountCents?: boolean
     participantCount?: boolean
     targetDate?: boolean
     createdAt?: boolean
@@ -12741,6 +12753,7 @@ export namespace Prisma {
     walletId?: boolean
     name?: boolean
     targetCents?: boolean
+    initialAmountCents?: boolean
     participantCount?: boolean
     targetDate?: boolean
     createdAt?: boolean
@@ -12753,6 +12766,7 @@ export namespace Prisma {
     walletId?: boolean
     name?: boolean
     targetCents?: boolean
+    initialAmountCents?: boolean
     participantCount?: boolean
     targetDate?: boolean
     createdAt?: boolean
@@ -12765,13 +12779,14 @@ export namespace Prisma {
     walletId?: boolean
     name?: boolean
     targetCents?: boolean
+    initialAmountCents?: boolean
     participantCount?: boolean
     targetDate?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
 
-  export type GoalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "walletId" | "name" | "targetCents" | "participantCount" | "targetDate" | "createdAt" | "updatedAt", ExtArgs["result"]["goal"]>
+  export type GoalOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "walletId" | "name" | "targetCents" | "initialAmountCents" | "participantCount" | "targetDate" | "createdAt" | "updatedAt", ExtArgs["result"]["goal"]>
   export type GoalInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     wallet?: boolean | WalletDefaultArgs<ExtArgs>
     allocations?: boolean | Goal$allocationsArgs<ExtArgs>
@@ -12795,6 +12810,7 @@ export namespace Prisma {
       walletId: string
       name: string
       targetCents: number
+      initialAmountCents: number
       participantCount: number
       targetDate: Date | null
       createdAt: Date
@@ -13228,6 +13244,7 @@ export namespace Prisma {
     readonly walletId: FieldRef<"Goal", 'String'>
     readonly name: FieldRef<"Goal", 'String'>
     readonly targetCents: FieldRef<"Goal", 'Int'>
+    readonly initialAmountCents: FieldRef<"Goal", 'Int'>
     readonly participantCount: FieldRef<"Goal", 'Int'>
     readonly targetDate: FieldRef<"Goal", 'DateTime'>
     readonly createdAt: FieldRef<"Goal", 'DateTime'>
@@ -14933,6 +14950,7 @@ export namespace Prisma {
     walletId: 'walletId',
     name: 'name',
     targetCents: 'targetCents',
+    initialAmountCents: 'initialAmountCents',
     participantCount: 'participantCount',
     targetDate: 'targetDate',
     createdAt: 'createdAt',
@@ -15708,6 +15726,7 @@ export namespace Prisma {
     walletId?: StringFilter<"Goal"> | string
     name?: StringFilter<"Goal"> | string
     targetCents?: IntFilter<"Goal"> | number
+    initialAmountCents?: IntFilter<"Goal"> | number
     participantCount?: IntFilter<"Goal"> | number
     targetDate?: DateTimeNullableFilter<"Goal"> | Date | string | null
     createdAt?: DateTimeFilter<"Goal"> | Date | string
@@ -15721,6 +15740,7 @@ export namespace Prisma {
     walletId?: SortOrder
     name?: SortOrder
     targetCents?: SortOrder
+    initialAmountCents?: SortOrder
     participantCount?: SortOrder
     targetDate?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -15737,6 +15757,7 @@ export namespace Prisma {
     walletId?: StringFilter<"Goal"> | string
     name?: StringFilter<"Goal"> | string
     targetCents?: IntFilter<"Goal"> | number
+    initialAmountCents?: IntFilter<"Goal"> | number
     participantCount?: IntFilter<"Goal"> | number
     targetDate?: DateTimeNullableFilter<"Goal"> | Date | string | null
     createdAt?: DateTimeFilter<"Goal"> | Date | string
@@ -15750,6 +15771,7 @@ export namespace Prisma {
     walletId?: SortOrder
     name?: SortOrder
     targetCents?: SortOrder
+    initialAmountCents?: SortOrder
     participantCount?: SortOrder
     targetDate?: SortOrderInput | SortOrder
     createdAt?: SortOrder
@@ -15769,6 +15791,7 @@ export namespace Prisma {
     walletId?: StringWithAggregatesFilter<"Goal"> | string
     name?: StringWithAggregatesFilter<"Goal"> | string
     targetCents?: IntWithAggregatesFilter<"Goal"> | number
+    initialAmountCents?: IntWithAggregatesFilter<"Goal"> | number
     participantCount?: IntWithAggregatesFilter<"Goal"> | number
     targetDate?: DateTimeNullableWithAggregatesFilter<"Goal"> | Date | string | null
     createdAt?: DateTimeWithAggregatesFilter<"Goal"> | Date | string
@@ -16535,6 +16558,7 @@ export namespace Prisma {
     id?: string
     name: string
     targetCents: number
+    initialAmountCents?: number
     participantCount?: number
     targetDate?: Date | string | null
     createdAt?: Date | string
@@ -16548,6 +16572,7 @@ export namespace Prisma {
     walletId: string
     name: string
     targetCents: number
+    initialAmountCents?: number
     participantCount?: number
     targetDate?: Date | string | null
     createdAt?: Date | string
@@ -16559,6 +16584,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     targetCents?: IntFieldUpdateOperationsInput | number
+    initialAmountCents?: IntFieldUpdateOperationsInput | number
     participantCount?: IntFieldUpdateOperationsInput | number
     targetDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -16572,6 +16598,7 @@ export namespace Prisma {
     walletId?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     targetCents?: IntFieldUpdateOperationsInput | number
+    initialAmountCents?: IntFieldUpdateOperationsInput | number
     participantCount?: IntFieldUpdateOperationsInput | number
     targetDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -16584,6 +16611,7 @@ export namespace Prisma {
     walletId: string
     name: string
     targetCents: number
+    initialAmountCents?: number
     participantCount?: number
     targetDate?: Date | string | null
     createdAt?: Date | string
@@ -16594,6 +16622,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     targetCents?: IntFieldUpdateOperationsInput | number
+    initialAmountCents?: IntFieldUpdateOperationsInput | number
     participantCount?: IntFieldUpdateOperationsInput | number
     targetDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -16605,6 +16634,7 @@ export namespace Prisma {
     walletId?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     targetCents?: IntFieldUpdateOperationsInput | number
+    initialAmountCents?: IntFieldUpdateOperationsInput | number
     participantCount?: IntFieldUpdateOperationsInput | number
     targetDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -17379,6 +17409,7 @@ export namespace Prisma {
     walletId?: SortOrder
     name?: SortOrder
     targetCents?: SortOrder
+    initialAmountCents?: SortOrder
     participantCount?: SortOrder
     targetDate?: SortOrder
     createdAt?: SortOrder
@@ -17387,6 +17418,7 @@ export namespace Prisma {
 
   export type GoalAvgOrderByAggregateInput = {
     targetCents?: SortOrder
+    initialAmountCents?: SortOrder
     participantCount?: SortOrder
   }
 
@@ -17395,6 +17427,7 @@ export namespace Prisma {
     walletId?: SortOrder
     name?: SortOrder
     targetCents?: SortOrder
+    initialAmountCents?: SortOrder
     participantCount?: SortOrder
     targetDate?: SortOrder
     createdAt?: SortOrder
@@ -17406,6 +17439,7 @@ export namespace Prisma {
     walletId?: SortOrder
     name?: SortOrder
     targetCents?: SortOrder
+    initialAmountCents?: SortOrder
     participantCount?: SortOrder
     targetDate?: SortOrder
     createdAt?: SortOrder
@@ -17414,6 +17448,7 @@ export namespace Prisma {
 
   export type GoalSumOrderByAggregateInput = {
     targetCents?: SortOrder
+    initialAmountCents?: SortOrder
     participantCount?: SortOrder
   }
 
@@ -18762,6 +18797,7 @@ export namespace Prisma {
     id?: string
     name: string
     targetCents: number
+    initialAmountCents?: number
     participantCount?: number
     targetDate?: Date | string | null
     createdAt?: Date | string
@@ -18773,6 +18809,7 @@ export namespace Prisma {
     id?: string
     name: string
     targetCents: number
+    initialAmountCents?: number
     participantCount?: number
     targetDate?: Date | string | null
     createdAt?: Date | string
@@ -18945,6 +18982,7 @@ export namespace Prisma {
     walletId?: StringFilter<"Goal"> | string
     name?: StringFilter<"Goal"> | string
     targetCents?: IntFilter<"Goal"> | number
+    initialAmountCents?: IntFilter<"Goal"> | number
     participantCount?: IntFilter<"Goal"> | number
     targetDate?: DateTimeNullableFilter<"Goal"> | Date | string | null
     createdAt?: DateTimeFilter<"Goal"> | Date | string
@@ -20535,6 +20573,7 @@ export namespace Prisma {
     id?: string
     name: string
     targetCents: number
+    initialAmountCents?: number
     participantCount?: number
     targetDate?: Date | string | null
     createdAt?: Date | string
@@ -20547,6 +20586,7 @@ export namespace Prisma {
     walletId: string
     name: string
     targetCents: number
+    initialAmountCents?: number
     participantCount?: number
     targetDate?: Date | string | null
     createdAt?: Date | string
@@ -20612,6 +20652,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     targetCents?: IntFieldUpdateOperationsInput | number
+    initialAmountCents?: IntFieldUpdateOperationsInput | number
     participantCount?: IntFieldUpdateOperationsInput | number
     targetDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20624,6 +20665,7 @@ export namespace Prisma {
     walletId?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     targetCents?: IntFieldUpdateOperationsInput | number
+    initialAmountCents?: IntFieldUpdateOperationsInput | number
     participantCount?: IntFieldUpdateOperationsInput | number
     targetDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20711,6 +20753,7 @@ export namespace Prisma {
     id?: string
     name: string
     targetCents: number
+    initialAmountCents?: number
     participantCount?: number
     targetDate?: Date | string | null
     createdAt?: Date | string
@@ -20845,6 +20888,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     targetCents?: IntFieldUpdateOperationsInput | number
+    initialAmountCents?: IntFieldUpdateOperationsInput | number
     participantCount?: IntFieldUpdateOperationsInput | number
     targetDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20856,6 +20900,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     targetCents?: IntFieldUpdateOperationsInput | number
+    initialAmountCents?: IntFieldUpdateOperationsInput | number
     participantCount?: IntFieldUpdateOperationsInput | number
     targetDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
@@ -20867,6 +20912,7 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     name?: StringFieldUpdateOperationsInput | string
     targetCents?: IntFieldUpdateOperationsInput | number
+    initialAmountCents?: IntFieldUpdateOperationsInput | number
     participantCount?: IntFieldUpdateOperationsInput | number
     targetDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string

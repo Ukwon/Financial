@@ -169,16 +169,17 @@ model PlanOccurrence {
 }
 
 model Goal {
-  id               String           @id @default(cuid())
-  walletId         String
-  name             String
-  targetCents      Int
-  participantCount Int              @default(1)
-  targetDate       DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  wallet           Wallet           @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  allocations      GoalAllocation[]
+  id                 String           @id @default(cuid())
+  walletId           String
+  name               String
+  targetCents        Int
+  initialAmountCents Int              @default(0)
+  participantCount   Int              @default(1)
+  targetDate         DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  wallet             Wallet           @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  allocations        GoalAllocation[]
 
   @@index([walletId])
 }

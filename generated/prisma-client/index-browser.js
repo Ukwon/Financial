@@ -215,6 +215,7 @@ exports.Prisma.GoalScalarFieldEnum = {
   walletId: 'walletId',
   name: 'name',
   targetCents: 'targetCents',
+  initialAmountCents: 'initialAmountCents',
   participantCount: 'participantCount',
   targetDate: 'targetDate',
   createdAt: 'createdAt',

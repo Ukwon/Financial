@@ -256,7 +256,7 @@ async function buildDashboard(prisma, monthsAhead = 12, walletId = null, tagId =
   for (const goal of goals) {
     if (!goal.targetDate) continue;
     const participants = Math.max(1, Number(goal.participantCount || 1));
-    const allocatedCents = (goal.allocations || []).reduce((sum, item) => sum + (item.amountCents || 0), 0);
+    const allocatedCents = Number(goal.initialAmountCents || 0) + (goal.allocations || []).reduce((sum, item) => sum + (item.amountCents || 0), 0);
     const remainingCents = Math.max((goal.targetCents || 0) - allocatedCents, 0);
     const personalRemainingCents = Math.round(remainingCents / participants);
     if (!personalRemainingCents) continue;
@@ -335,7 +335,7 @@ async function buildDashboard(prisma, monthsAhead = 12, walletId = null, tagId =
   }
 
   const goalsProgress = goals.map((goal) => {
-    const allocated = goal.allocations.reduce((sum, item) => sum + item.amountCents, 0);
+    const allocated = Number(goal.initialAmountCents || 0) + goal.allocations.reduce((sum, item) => sum + item.amountCents, 0);
     return {
       id: goal.id,
       name: goal.name,

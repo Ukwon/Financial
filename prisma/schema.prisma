@@ -173,6 +173,7 @@ model Goal {
   walletId        String
   name            String
   targetCents     Int
+  initialAmountCents Int          @default(0)
   participantCount Int             @default(1)
   targetDate      DateTime?
   createdAt       DateTime         @default(now())

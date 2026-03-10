@@ -1,0 +1,2 @@
+ALTER TABLE "Goal"
+ADD COLUMN "initialAmountCents" INTEGER NOT NULL DEFAULT 0;

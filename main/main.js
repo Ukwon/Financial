@@ -232,6 +232,7 @@ async function restoreBackupData(prisma, payload) {
           walletId: g.walletId,
           name: g.name,
           targetCents: Number(g.targetCents || 0),
+          initialAmountCents: Number(g.initialAmountCents || 0),
           participantCount: Math.max(1, Number(g.participantCount || 1)),
           targetDate: toDate(g.targetDate)
         }))
@@ -780,6 +781,7 @@ async function registerIpc() {
         walletId: payload.walletId,
         name: payload.name,
         targetCents: Math.round(Number(payload.target) * 100),
+        initialAmountCents: Math.round(Number(payload.initialAmount || 0) * 100),
         participantCount: Math.max(1, Number(payload.participantCount || 1)),
         targetDate: toDate(payload.targetDate)
       }
@@ -850,6 +852,7 @@ async function registerIpc() {
       data: {
         name: payload.name,
         targetCents: Math.round(Number(payload.target) * 100),
+        initialAmountCents: Math.round(Number(payload.initialAmount || 0) * 100),
         participantCount: Math.max(1, Number(payload.participantCount || 1)),
         targetDate: toDate(payload.targetDate)
       }

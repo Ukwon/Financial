@@ -131,7 +131,7 @@ const monthInputFromDate = (dateValue) => {
 function goalMetrics(goal) {
   const target = goal.targetCents || 0;
   const participants = Math.max(1, Number(goal.participantCount || 1));
-  const allocated = (goal.allocations || []).reduce((sum, item) => sum + (item.amountCents || 0), 0);
+  const allocated = Number(goal.initialAmountCents || 0) + (goal.allocations || []).reduce((sum, item) => sum + (item.amountCents || 0), 0);
   const remaining = Math.max(target - allocated, 0);
   const personalTarget = Math.round(target / participants);
   const personalAllocated = Math.round(allocated / participants);
@@ -317,7 +317,7 @@ export default function App() {
     startMonth: currentMonthInput(),
     tagIds: []
   });
-  const [goalForm, setGoalForm] = useState({ name: "", target: "", participantCount: "1", targetDate: "" });
+  const [goalForm, setGoalForm] = useState({ name: "", target: "", initialAmount: "", participantCount: "1", targetDate: "" });
   const [goalContribution, setGoalContribution] = useState({});
   const [editTx, setEditTx] = useState(null);
   const [editGoal, setEditGoal] = useState(null);
@@ -976,12 +976,13 @@ export default function App() {
         walletId,
         name: goalForm.name,
         target: parseMoneyInput(goalForm.target),
+        initialAmount: parseMoneyInput(goalForm.initialAmount),
         participantCount: Math.max(1, Number(goalForm.participantCount || 1)),
         targetDate: goalForm.targetDate || null
       });
     });
     if (!ok) return;
-    setGoalForm({ name: "", target: "", participantCount: "1", targetDate: "" });
+    setGoalForm({ name: "", target: "", initialAmount: "", participantCount: "1", targetDate: "" });
     showSuccess("Meta criada.");
     load();
   }
@@ -1006,6 +1007,7 @@ export default function App() {
         id: editGoal.id,
         name: editGoal.name,
         target: parseMoneyInput(editGoal.target),
+        initialAmount: parseMoneyInput(editGoal.initialAmount),
         participantCount: Math.max(1, Number(editGoal.participantCount || 1)),
         targetDate: editGoal.targetDate || null
       });
@@ -1978,7 +1980,7 @@ export default function App() {
                   ?
                 </button>
               </div>
-              <form onSubmit={createGoal} className="grid gap-3 md:grid-cols-4">
+              <form onSubmit={createGoal} className="grid gap-3 md:grid-cols-5">
                 <label className="form-field">
                   <span className="form-label">Nome da meta</span>
                   <input className="input" placeholder="Ex: Viagem de férias" value={goalForm.name} onChange={(e) => setGoalForm((p) => ({ ...p, name: e.target.value }))} />
@@ -1988,6 +1990,10 @@ export default function App() {
                   <input className="input" type="text" inputMode="numeric" placeholder="R$ 0,00" value={goalForm.target} onChange={(e) => setGoalForm((p) => ({ ...p, target: maskMoneyInput(e.target.value) }))} />
                 </label>
                 <label className="form-field">
+                  <span className="form-label">Valor inicial</span>
+                  <input className="input" type="text" inputMode="numeric" placeholder="R$ 0,00" value={goalForm.initialAmount} onChange={(e) => setGoalForm((p) => ({ ...p, initialAmount: maskMoneyInput(e.target.value) }))} />
+                </label>
+                <label className="form-field">
                   <span className="form-label">Participantes</span>
                   <input className="input" type="number" min="1" placeholder="1" value={goalForm.participantCount} onChange={(e) => setGoalForm((p) => ({ ...p, participantCount: e.target.value }))} />
                 </label>
@@ -1995,7 +2001,7 @@ export default function App() {
                   <span className="form-label">Prazo final</span>
                   <input className="input" type="date" value={goalForm.targetDate} onChange={(e) => setGoalForm((p) => ({ ...p, targetDate: e.target.value }))} />
                 </label>
-                <div className="form-actions md:col-span-4">
+                <div className="form-actions md:col-span-5">
                   <button className="btn-primary" type="submit" disabled={!!actionBusy.createGoal}>Criar</button>
                 </div>
               </form>
@@ -2011,11 +2017,12 @@ export default function App() {
                       <div>
                         <p className="text-sm font-medium">{goal.name}</p>
                         <p className="text-xs text-zinc-400">{money(m.allocated / 100)} de {money(m.target / 100)} ({m.progress.toFixed(1)}%)</p>
+                        {(goal.initialAmountCents || 0) > 0 ? <p className="text-xs text-zinc-500">Valor inicial: {money((goal.initialAmountCents || 0) / 100)}</p> : null}
                         <p className="text-xs text-zinc-500">Participantes: {m.participants} • Sua cota: {money(m.personalTarget / 100)}</p>
                         <p className="text-xs text-zinc-500">Previsão: {m.projectedDate ? new Date(m.projectedDate).toLocaleDateString("pt-BR") : "Sem dados suficientes"}</p>
                       </div>
                       <div className="flex gap-1">
-                        <button className="btn-muted" type="button" onClick={() => setEditGoal({ id: goal.id, name: goal.name, target: moneyInput(goal.targetCents / 100), participantCount: String(goal.participantCount || 1), targetDate: dateInput(goal.targetDate) })}>Editar</button>
+                        <button className="btn-muted" type="button" onClick={() => setEditGoal({ id: goal.id, name: goal.name, target: moneyInput(goal.targetCents / 100), initialAmount: moneyInput((goal.initialAmountCents || 0) / 100), participantCount: String(goal.participantCount || 1), targetDate: dateInput(goal.targetDate) })}>Editar</button>
                         <button className="btn-danger" type="button" onClick={() => openConfirm("Excluir meta", "Todos os aportes vinculados também serão removidos.", async () => { await window.api.goals.delete({ id: goal.id }); load(); })}>Excluir</button>
                       </div>
                     </div>
@@ -2222,6 +2229,7 @@ export default function App() {
             <h3 className="panel-title">Editar meta</h3>
             <input className="input" value={editGoal.name} onChange={(e) => setEditGoal((p) => ({ ...p, name: e.target.value }))} />
             <input className="input" type="text" inputMode="numeric" value={editGoal.target} onChange={(e) => setEditGoal((p) => ({ ...p, target: maskMoneyInput(e.target.value) }))} />
+            <input className="input" type="text" inputMode="numeric" value={editGoal.initialAmount || ""} onChange={(e) => setEditGoal((p) => ({ ...p, initialAmount: maskMoneyInput(e.target.value) }))} />
             <input className="input" type="number" min="1" value={editGoal.participantCount || "1"} onChange={(e) => setEditGoal((p) => ({ ...p, participantCount: e.target.value }))} />
             <input className="input" type="date" value={editGoal.targetDate} onChange={(e) => setEditGoal((p) => ({ ...p, targetDate: e.target.value }))} />
             <div className="flex justify-end gap-2"><button className="btn-muted" type="button" onClick={() => setEditGoal(null)}>Cancelar</button><button className="btn-primary" type="submit" disabled={!!actionBusy.saveGoal}>Salvar</button></div>
