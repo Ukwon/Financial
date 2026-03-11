@@ -131,10 +131,12 @@ const monthInputFromDate = (dateValue) => {
 function goalMetrics(goal) {
   const target = goal.targetCents || 0;
   const participants = Math.max(1, Number(goal.participantCount || 1));
-  const allocated = Number(goal.initialAmountCents || 0) + (goal.allocations || []).reduce((sum, item) => sum + (item.amountCents || 0), 0);
+  const initialAmount = Number(goal.initialAmountCents || 0);
+  const personalContributions = (goal.allocations || []).reduce((sum, item) => sum + (item.amountCents || 0), 0);
+  const allocated = initialAmount + personalContributions;
   const remaining = Math.max(target - allocated, 0);
   const personalTarget = Math.round(target / participants);
-  const personalAllocated = Math.round(allocated / participants);
+  const personalAllocated = Math.round(initialAmount / participants) + personalContributions;
   const personalRemaining = Math.max(personalTarget - personalAllocated, 0);
   const progress = target > 0 ? Math.min(100, (allocated / target) * 100) : 0;
   let projectedDate = null;

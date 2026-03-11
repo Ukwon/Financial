@@ -245,10 +245,8 @@ async function buildDashboard(prisma, monthsAhead = 12, walletId = null, tagId =
     if (a.transactionId) continue;
     const key = monthKey(a.allocatedAt);
     if (!monthly[key]) monthly[key] = { incomeCents: 0, expenseCents: 0, goalsPlannedCents: 0 };
-    const participants = Math.max(1, Number(a.goal?.participantCount || 1));
-    const personalExpense = Math.round(a.amountCents / participants);
-    totals.expenseCents += personalExpense;
-    monthly[key].expenseCents += personalExpense;
+    totals.expenseCents += a.amountCents;
+    monthly[key].expenseCents += a.amountCents;
   }
 
   // Planned monthly goal contribution (personal share) is also treated as expense
@@ -262,7 +260,7 @@ async function buildDashboard(prisma, monthsAhead = 12, walletId = null, tagId =
     if (!personalRemainingCents) continue;
     const actualPersonalByMonth = new Map();
     for (const item of goal.allocations || []) {
-      const personal = Math.round((item.amountCents || 0) / participants);
+      const personal = Math.round(item.amountCents || 0);
       if (personal <= 0) continue;
       const key = monthKey(new Date(item.allocatedAt));
       actualPersonalByMonth.set(key, (actualPersonalByMonth.get(key) || 0) + personal);
@@ -310,9 +308,7 @@ async function buildDashboard(prisma, monthsAhead = 12, walletId = null, tagId =
   }
   for (const a of previousGoalAllocations) {
     if (a.transactionId) continue;
-    const participants = Math.max(1, Number(a.goal?.participantCount || 1));
-    const personalExpense = Math.round(a.amountCents / participants);
-    openingBalanceCents -= personalExpense;
+    openingBalanceCents -= a.amountCents;
   }
 
   const byMonth = [];
