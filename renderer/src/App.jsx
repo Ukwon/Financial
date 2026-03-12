@@ -202,12 +202,31 @@ function goalContributionPlan(goal) {
   return { history, monthsLeft, requiredMonthlyCentsTotal, requiredMonthlyCentsPersonal };
 }
 
+function scheduledModeFromPlan(plan) {
+  if (plan?.type === "INSTALLMENT") return "INSTALLMENT";
+  if (
+    plan?.type === "RECURRING" &&
+    (plan?.recurrenceUnit || "MONTHLY") === "MONTHLY" &&
+    Number(plan?.intervalValue || 1) === 1 &&
+    !plan?.endDate
+  ) {
+    return "FIXED";
+  }
+  return "RECURRING_PERIOD";
+}
+
+function scheduledPlanLabel(plan) {
+  const mode = scheduledModeFromPlan(plan);
+  if (mode === "FIXED") return "Fixo mensal";
+  if (mode === "INSTALLMENT") return "Parcelado";
+  return "Recorrente por período";
+}
+
 const tabs = [
   { id: "dashboard", label: "Principal" },
   { id: "projection", label: "Projeção" },
   { id: "transactions", label: "Transações" },
-  { id: "plans", label: "Planos" },
-  { id: "fixed", label: "Fixos" },
+  { id: "fixed", label: "Programado" },
   { id: "goals", label: "Metas" },
   { id: "investments", label: "Investimentos" }
 ];
@@ -227,7 +246,7 @@ const formHelpBySection = {
   },
   fixed: {
     title: "Aba Fixos",
-    text: "Centraliza receitas e despesas mensais fixas por dia de vencimento. Ideal para salário, aluguel, assinaturas e contas recorrentes."
+    text: "Centraliza lançamentos programados: fixos mensais, parcelados e recorrentes por período. Os campos mudam conforme o tipo escolhido."
   },
   goals: {
     title: "Aba Metas",
@@ -275,6 +294,7 @@ export default function App() {
   const [actionBusy, setActionBusy] = useState({});
   const [showNewWalletForm, setShowNewWalletForm] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(currentMonthKey());
+  const [scheduledMode, setScheduledMode] = useState("FIXED");
   const [projectionDate, setProjectionDate] = useState(() => {
     const d = new Date();
     d.setMonth(d.getMonth() + 12);
@@ -282,6 +302,8 @@ export default function App() {
   });
   const [projectionWarning, setProjectionWarning] = useState("");
   const [showTransactionsHistory, setShowTransactionsHistory] = useState(false);
+  const [showNewTransactionForm, setShowNewTransactionForm] = useState(true);
+  const [showScheduledForm, setShowScheduledForm] = useState(true);
   const [transactionsHistory, setTransactionsHistory] = useState([]);
   const [transactionsHistoryFilters, setTransactionsHistoryFilters] = useState({
     search: "",
@@ -294,7 +316,7 @@ export default function App() {
   const [noticeType, setNoticeType] = useState("success");
 
   const [filters, setFilters] = useState({ search: "", type: "", tagId: "", paidStatus: "", ...monthRange() });
-  const [txForm, setTxForm] = useState({ type: "EXPENSE", amount: "", description: "", dueDate: dateInput(new Date()), tagIds: [] });
+  const [txForm, setTxForm] = useState({ type: "EXPENSE", amount: "", description: "", dueDate: dateInput(new Date()), settlementDueDate: "", tagIds: [] });
   const [tagDashboard, setTagDashboard] = useState({ topTags: [], insight: "", budgets: [] });
   const [tagBudgetForm, setTagBudgetForm] = useState({ tagId: "", limit: "" });
   const [showTagBudgetForm, setShowTagBudgetForm] = useState(false);
@@ -307,7 +329,9 @@ export default function App() {
     amount: "",
     description: "",
     startDate: dateInput(new Date()),
+    endDate: "",
     recurrenceUnit: "MONTHLY",
+    intervalValue: 1,
     installments: 10,
     tagIds: []
   });
@@ -336,6 +360,7 @@ export default function App() {
     () => plans.filter((p) => p.type === "RECURRING" && (p.recurrenceUnit || "MONTHLY") === "MONTHLY"),
     [plans]
   );
+  const scheduledPlans = useMemo(() => plans || [], [plans]);
   const selectedMonthProjection = useMemo(
     () => dashboard.monthly.find((m) => m.month === selectedMonth) || { income: 0, expense: 0, balance: 0 },
     [dashboard.monthly, selectedMonth]
@@ -362,7 +387,9 @@ export default function App() {
     for (const t of transactions) {
       if (t.type !== "EXPENSE" || t.paidAt) continue;
       pending += t.amountCents;
-      const due = new Date(t.dueDate);
+      const dueReference = t.settlementDueDate ? new Date(t.settlementDueDate) : null;
+      if (!dueReference) continue;
+      const due = dueReference;
       if (due < now) overdue += t.amountCents;
       if (due >= now && due <= in7) dueSoon += t.amountCents;
     }
@@ -705,7 +732,7 @@ export default function App() {
       });
     });
     if (!ok) return;
-    setTxForm((p) => ({ ...p, amount: "", description: "", tagIds: [] }));
+    setTxForm((p) => ({ ...p, amount: "", description: "", settlementDueDate: "", tagIds: [] }));
     showSuccess("Transação criada.");
     load();
   }
@@ -876,14 +903,16 @@ export default function App() {
         ...planForm,
         walletId,
         amount: parseMoneyInput(planForm.amount),
+        endDate: planForm.type === "RECURRING" ? (planForm.endDate || null) : null,
+        intervalValue: Number(planForm.intervalValue || 1),
         installments: planForm.type === "INSTALLMENT" ? Number(planForm.installments) : null,
         recurrenceUnit: planForm.type === "RECURRING" ? planForm.recurrenceUnit : null,
         tagIds: planForm.tagIds || []
       });
     });
     if (!ok) return;
-    setPlanForm((p) => ({ ...p, amount: "", description: "", tagIds: [] }));
-    showSuccess("Plano criado.");
+    setPlanForm((p) => ({ ...p, amount: "", description: "", endDate: "", intervalValue: 1, tagIds: [] }));
+    showSuccess(planForm.type === "INSTALLMENT" ? "Parcelado criado." : "Recorrente criado.");
     load();
   }
 
@@ -910,6 +939,45 @@ export default function App() {
     load();
   }
 
+  async function createScheduled(e) {
+    if (scheduledMode === "FIXED") return createFixed(e);
+    e.preventDefault();
+    if (!walletId || !planForm.amount) return;
+    const type = scheduledMode === "INSTALLMENT" ? "INSTALLMENT" : "RECURRING";
+    if (type === "INSTALLMENT" && Number(planForm.installments || 0) < 1) {
+      setNoticeType("error");
+      setNotice("Informe uma quantidade válida de parcelas.");
+      return;
+    }
+    if (type === "RECURRING" && !planForm.endDate) {
+      setNoticeType("error");
+      setNotice("Informe a data final da recorrência.");
+      return;
+    }
+    if (type === "RECURRING" && new Date(planForm.endDate) < new Date(planForm.startDate)) {
+      setNoticeType("error");
+      setNotice("A data final deve ser igual ou posterior à data inicial.");
+      return;
+    }
+    const ok = await runAction("createPlan", "Erro ao criar lançamento programado.", async () => {
+      await window.api.plans.create({
+        ...planForm,
+        type,
+        walletId,
+        amount: parseMoneyInput(planForm.amount),
+        endDate: type === "RECURRING" ? (planForm.endDate || null) : null,
+        intervalValue: 1,
+        installments: type === "INSTALLMENT" ? Number(planForm.installments) : null,
+        recurrenceUnit: type === "RECURRING" ? planForm.recurrenceUnit : null,
+        tagIds: planForm.tagIds || []
+      });
+    });
+    if (!ok) return;
+    setPlanForm((p) => ({ ...p, amount: "", description: "", endDate: "", intervalValue: 1, tagIds: [] }));
+    showSuccess(type === "INSTALLMENT" ? "Parcelado criado." : "Recorrente criado.");
+    load();
+  }
+
   async function toggleFixedActive(plan) {
     const ok = await runAction("toggleFixed", "Erro ao atualizar lançamento fixo.", async () => {
       await window.api.plans.update({
@@ -933,13 +1001,21 @@ export default function App() {
   }
 
   function openEditFixed(plan) {
+    const mode = scheduledModeFromPlan(plan);
     setEditFixed({
       id: plan.id,
+      mode,
+      type: plan.type,
       transactionType: plan.transactionType,
       amount: moneyInput(plan.amountCents / 100),
       description: plan.description || "",
       dueDay: String(datePartsUTC(plan.startDate).day),
       startMonth: monthInputFromDate(plan.startDate),
+      startDate: dateInput(plan.startDate),
+      endDate: plan.endDate ? dateInput(plan.endDate) : "",
+      recurrenceUnit: plan.recurrenceUnit || "MONTHLY",
+      intervalValue: "1",
+      installments: String(plan.installments || 1),
       isActive: plan.isActive,
       tagIds: (plan.tags || []).map((link) => link.tagId)
     });
@@ -948,25 +1024,58 @@ export default function App() {
   async function saveFixedEdit(e) {
     e.preventDefault();
     if (!editFixed?.id || !editFixed.amount) return;
-    const startDate = buildDateFromMonthAndDay(editFixed.startMonth, editFixed.dueDay);
+    if (editFixed.mode === "INSTALLMENT" && Number(editFixed.installments || 0) < 1) {
+      setNoticeType("error");
+      setNotice("Informe uma quantidade válida de parcelas.");
+      return;
+    }
+    if (editFixed.mode === "RECURRING_PERIOD" && !editFixed.endDate) {
+      setNoticeType("error");
+      setNotice("Informe a data final da recorrência.");
+      return;
+    }
+    if (editFixed.mode === "RECURRING_PERIOD" && new Date(editFixed.endDate) < new Date(editFixed.startDate)) {
+      setNoticeType("error");
+      setNotice("A data final deve ser igual ou posterior à data inicial.");
+      return;
+    }
     const ok = await runAction("saveFixed", "Erro ao salvar lançamento fixo.", async () => {
+      if (editFixed.mode === "FIXED") {
+        const startDate = buildDateFromMonthAndDay(editFixed.startMonth, editFixed.dueDay);
+        await window.api.plans.update({
+          id: editFixed.id,
+          type: "RECURRING",
+          transactionType: editFixed.transactionType,
+          amount: parseMoneyInput(editFixed.amount),
+          description: editFixed.description,
+          startDate,
+          endDate: null,
+          intervalValue: 1,
+          recurrenceUnit: "MONTHLY",
+          installments: null,
+          isActive: editFixed.isActive,
+          tagIds: editFixed.tagIds || []
+        });
+        return;
+      }
       await window.api.plans.update({
         id: editFixed.id,
-        type: "RECURRING",
+        type: editFixed.mode === "INSTALLMENT" ? "INSTALLMENT" : "RECURRING",
         transactionType: editFixed.transactionType,
         amount: parseMoneyInput(editFixed.amount),
         description: editFixed.description,
-        startDate,
+        startDate: editFixed.startDate,
+        endDate: editFixed.mode === "RECURRING_PERIOD" ? (editFixed.endDate || null) : null,
         intervalValue: 1,
-        recurrenceUnit: "MONTHLY",
-        installments: null,
+        recurrenceUnit: editFixed.mode === "RECURRING_PERIOD" ? editFixed.recurrenceUnit : null,
+        installments: editFixed.mode === "INSTALLMENT" ? Number(editFixed.installments || 1) : null,
         isActive: editFixed.isActive,
         tagIds: editFixed.tagIds || []
       });
     });
     if (!ok) return;
     setEditFixed(null);
-    showSuccess("Lançamento fixo atualizado.");
+    showSuccess("Lançamento atualizado.");
     load();
   }
 
@@ -1021,7 +1130,7 @@ export default function App() {
   }
 
   function exportCsv() {
-    const rows = [["Data", "Tipo", "Status", "Tags", "Descrição", "Valor"], ...transactions.map((t) => [new Date(t.dueDate).toLocaleDateString("pt-BR"), t.type, t.paidAt ? "PAGO" : "PENDENTE", (t.tags || []).map((link) => link.tag?.name).filter(Boolean).join(", "), t.description || "", (t.amountCents / 100).toFixed(2).replace(".", ",")])];
+    const rows = [["Data ocorrência", "Data vencimento", "Tipo", "Status", "Tags", "Descrição", "Valor"], ...transactions.map((t) => [new Date(t.dueDate).toLocaleDateString("pt-BR"), t.settlementDueDate ? new Date(t.settlementDueDate).toLocaleDateString("pt-BR") : "", t.type, t.paidAt ? "PAGO" : "PENDENTE", (t.tags || []).map((link) => link.tag?.name).filter(Boolean).join(", "), t.description || "", (t.amountCents / 100).toFixed(2).replace(".", ",")])];
     const csv = rows.map((r) => r.map((x) => `"${String(x).replaceAll("\"", "\"\"")}"`).join(";")).join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -1165,12 +1274,12 @@ export default function App() {
             ))}
           </div>
           <button
-            className="absolute bottom-3 right-3 inline-flex h-6 w-6 items-center justify-center rounded-full border border-zinc-700/80 text-xs text-zinc-300 hover:border-zinc-500 hover:text-zinc-100"
+            className="absolute bottom-3 right-3 icon-ghost-btn"
             type="button"
             title="Sobre o projeto"
             onClick={() => setShowAboutBadgeModal(true)}
           >
-            !
+            <InfoCircleIcon className="h-4 w-4" />
           </button>
         </header>
 
@@ -1331,12 +1440,12 @@ export default function App() {
               <div className="mb-2 flex items-center gap-2">
                 <h3 className="panel-title mb-0">Simulador de investimentos</h3>
                 <button
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700/70 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                  className="icon-ghost-btn help-icon-btn"
                   type="button"
                   onClick={() => openFormHelp("investments")}
                   title="Ajuda da aba"
                 >
-                  ?
+                  <HelpCircleIcon className="h-4 w-4" />
                 </button>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
@@ -1351,12 +1460,12 @@ export default function App() {
                       ))}
                     </select>
                     <button
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700/70 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                      className="icon-ghost-btn help-icon-btn"
                       type="button"
                       onClick={() => setShowInvestmentHelp(true)}
                       title="Ajuda"
                     >
-                      ?
+                      <HelpCircleIcon className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -1426,12 +1535,12 @@ export default function App() {
               <div className="mb-2 flex items-center gap-2">
                 <h3 className="panel-title mb-0">Projeção</h3>
                 <button
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700/70 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                  className="icon-ghost-btn help-icon-btn"
                   type="button"
                   onClick={() => openFormHelp("projection")}
                   title="Ajuda da aba"
                 >
-                  ?
+                  <HelpCircleIcon className="h-4 w-4" />
                 </button>
               </div>
               <div className="space-y-1">
@@ -1494,99 +1603,113 @@ export default function App() {
 
         {activeTab === "transactions" ? (
           <div className="tab-panel space-y-4">
-            <div className="flex justify-end">
-              <button
-                type="button"
-                className="text-sm text-cyan-300 underline decoration-cyan-500/60 underline-offset-2 hover:text-cyan-200"
-                onClick={() => setShowTransactionsHistory((prev) => !prev)}
-              >
-                {showTransactionsHistory ? "Ocultar" : "Histórico"}
-              </button>
-            </div>
-
             {!showTransactionsHistory ? (
               <>
                 <section className="panel">
-                  <div className="mb-2 flex items-center gap-2">
-                    <h3 className="panel-title mb-0">Nova transação</h3>
-                    <button
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700/70 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
-                      type="button"
-                      onClick={() => openFormHelp("transactions")}
-                      title="Ajuda da aba"
-                    >
-                      ?
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <h3 className="panel-title mb-0">Nova transação</h3>
+                      <button
+                        className="icon-ghost-btn help-icon-btn"
+                        type="button"
+                        onClick={() => openFormHelp("transactions")}
+                        title="Ajuda da aba"
+                      >
+                        <HelpCircleIcon className="h-4 w-4" />
+                      </button>
+                    </div>
+                    <button className="btn-muted" type="button" onClick={() => setShowNewTransactionForm((v) => !v)}>
+                      {showNewTransactionForm ? "-" : "+"}
                     </button>
                   </div>
-                  <form onSubmit={createTx} className="grid gap-3 md:grid-cols-2">
-                    <label className="form-field">
-                      <span className="form-label">Tipo</span>
-                      <select className="input" value={txForm.type} onChange={(e) => setTxForm((p) => ({ ...p, type: e.target.value }))}><option value="EXPENSE">Despesa</option><option value="INCOME">Receita</option></select>
-                    </label>
-                    <label className="form-field">
-                      <span className="form-label">Valor</span>
-                      <input className="input" type="text" inputMode="numeric" placeholder="R$ 0,00" value={txForm.amount} onChange={(e) => setTxForm((p) => ({ ...p, amount: maskMoneyInput(e.target.value) }))} />
-                    </label>
-                    <label className="form-field">
-                      <span className="form-label">Descrição</span>
-                      <input className="input" placeholder="Ex: Mercado do mês" value={txForm.description} onChange={(e) => setTxForm((p) => ({ ...p, description: e.target.value }))} />
-                    </label>
-                    <label className="form-field">
-                      <span className="form-label">Data de ocorrência</span>
-                      <input className="input" type="date" value={txForm.dueDate} onChange={(e) => setTxForm((p) => ({ ...p, dueDate: e.target.value }))} />
-                    </label>
-                    <div className="space-y-2 md:col-span-2">
-                      <div className="flex items-center justify-between">
-                        <span className="form-label">Tags (opcional)</span>
+                  <div className={`overflow-hidden transition-all duration-300 ${showNewTransactionForm ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"}`}>
+                    <form onSubmit={createTx} className="form-shell pt-1">
+                      <div className="form-row form-row-4-compact">
+                        <label className="form-field">
+                          <span className="form-label">Tipo</span>
+                          <select className="input" value={txForm.type} onChange={(e) => setTxForm((p) => ({ ...p, type: e.target.value }))}><option value="EXPENSE">Despesa</option><option value="INCOME">Receita</option></select>
+                        </label>
+                        <label className="form-field">
+                          <span className="form-label">Valor</span>
+                          <input className="input" type="text" inputMode="numeric" placeholder="R$ 0,00" value={txForm.amount} onChange={(e) => setTxForm((p) => ({ ...p, amount: maskMoneyInput(e.target.value) }))} />
+                        </label>
+                        <label className="form-field">
+                          <span className="form-label">Data de ocorrência</span>
+                          <input className="input" type="date" value={txForm.dueDate} onChange={(e) => setTxForm((p) => ({ ...p, dueDate: e.target.value }))} />
+                        </label>
+                        <label className="form-field">
+                          <span className="form-label">Data de vencimento (opcional)</span>
+                          <input className="input" type="date" value={txForm.settlementDueDate} onChange={(e) => setTxForm((p) => ({ ...p, settlementDueDate: e.target.value }))} />
+                        </label>
                       </div>
-                      <select className="input" value="" onChange={(e) => handleTagSelect("tx", e.target.value)}>
-                        <option value="">Selecionar tag...</option>
-                        {activeTags
-                          .filter((tag) => !(txForm.tagIds || []).includes(tag.id))
-                          .map((tag) => (
-                            <option key={tag.id} value={tag.id}>{tag.name}</option>
-                          ))}
-                        <option value="__create_tag__">+ Criar</option>
-                      </select>
-                      {(txForm.tagIds || []).length ? (
-                        <div className="flex flex-wrap gap-1">
-                          {(txForm.tagIds || []).map((tagId) => {
-                            const tag = activeTags.find((t) => t.id === tagId);
-                            if (!tag) return null;
-                            return (
-                              <div key={tag.id} className="flex items-center gap-1 rounded-full bg-zinc-900/70 pl-2 pr-1 py-0.5" style={{ border: `1px solid ${tag.color || "#334155"}99` }}>
-                                <span className="text-[11px] text-zinc-100">{tag.name}</span>
-                                <button className="tag-action-btn" type="button" title="Editar tag" onClick={() => openEditTagModal("tx", tag)}>
-                                  Editar
-                                </button>
-                                <button className="tag-action-btn tag-action-btn-danger" type="button" title="Excluir tag" onClick={() => openDeleteTagModal("tx", tag)}>
-                                  Excluir
-                                </button>
-                                <button className="tag-action-btn" type="button" title="Remover da transação" onClick={() => removeTagFromTarget("tx", tag.id)}>
-                                  x
-                                </button>
-                              </div>
-                            );
-                          })}
+                      <div className="form-row form-row-1">
+                        <label className="form-field">
+                          <span className="form-label">Descrição</span>
+                          <input className="input" placeholder="Ex: Mercado do mês" value={txForm.description} onChange={(e) => setTxForm((p) => ({ ...p, description: e.target.value }))} />
+                        </label>
+                      </div>
+                      <div className="form-row-tags space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="form-label">Tags (opcional)</span>
                         </div>
-                      ) : null}
-                    </div>
-                    <div className="form-actions md:col-span-2">
-                      <button className="btn-primary" type="submit" disabled={!!actionBusy.createTx}>Salvar</button>
-                    </div>
-                  </form>
+                        <select className="input" value="" onChange={(e) => handleTagSelect("tx", e.target.value)}>
+                          <option value="">Selecionar tag...</option>
+                          {activeTags
+                            .filter((tag) => !(txForm.tagIds || []).includes(tag.id))
+                            .map((tag) => (
+                              <option key={tag.id} value={tag.id}>{tag.name}</option>
+                            ))}
+                          <option value="__create_tag__">+ Criar</option>
+                        </select>
+                        {(txForm.tagIds || []).length ? (
+                          <div className="flex flex-wrap gap-1">
+                            {(txForm.tagIds || []).map((tagId) => {
+                              const tag = activeTags.find((t) => t.id === tagId);
+                              if (!tag) return null;
+                              return (
+                                <div key={tag.id} className="flex items-center gap-1 rounded-full bg-zinc-900/70 pl-2 pr-1 py-0.5" style={{ border: `1px solid ${tag.color || "#334155"}99` }}>
+                                  <span className="text-[11px] text-zinc-100">{tag.name}</span>
+                                  <button className="tag-action-btn" type="button" title="Editar tag" onClick={() => openEditTagModal("tx", tag)}>
+                                    Editar
+                                  </button>
+                                  <button className="tag-action-btn tag-action-btn-danger" type="button" title="Excluir tag" onClick={() => openDeleteTagModal("tx", tag)}>
+                                    Excluir
+                                  </button>
+                                  <button className="tag-action-btn" type="button" title="Remover da transação" onClick={() => removeTagFromTarget("tx", tag.id)}>
+                                    x
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="form-actions">
+                        <button className="btn-primary" type="submit" disabled={!!actionBusy.createTx}>Salvar</button>
+                      </div>
+                    </form>
+                  </div>
                 </section>
 
                 <section className="panel">
-                  <div className="mb-2 flex flex-wrap gap-2">
-                    <input className="input md:w-72" placeholder="Buscar descrição" value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} />
-                    <select className="input md:w-40" value={filters.type} onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}><option value="">Tipo</option><option value="EXPENSE">Despesa</option><option value="INCOME">Receita</option></select>
-                    <select className="input md:w-40" value={filters.paidStatus} onChange={(e) => setFilters((p) => ({ ...p, paidStatus: e.target.value }))}><option value="">Status</option><option value="PENDING">Pendente</option><option value="PAID">Pago</option></select>
-                    <div className="rounded-lg border border-zinc-700/60 bg-zinc-900/40 px-2 py-2 text-xs text-zinc-300 md:w-44">{filters.fromDate}</div>
-                    <div className="rounded-lg border border-zinc-700/60 bg-zinc-900/40 px-2 py-2 text-xs text-zinc-300 md:w-44">{filters.toDate}</div>
-                    <select className="input md:w-52" value={filters.tagId} onChange={(e) => setFilters((p) => ({ ...p, tagId: e.target.value }))}><option value="">Tag</option>{activeTags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}</select>
-                    <button className="btn-muted" type="button" onClick={() => setFilters({ search: "", type: "", tagId: "", paidStatus: "", ...monthRange() })}>Limpar</button>
-                    <button className="btn-muted" type="button" onClick={exportCsv}>Exportar</button>
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div className="flex flex-wrap gap-2">
+                      <input className="input md:w-72" placeholder="Buscar descrição" value={filters.search} onChange={(e) => setFilters((p) => ({ ...p, search: e.target.value }))} />
+                      <select className="input md:w-40" value={filters.type} onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}><option value="">Tipo</option><option value="EXPENSE">Despesa</option><option value="INCOME">Receita</option></select>
+                      <select className="input md:w-40" value={filters.paidStatus} onChange={(e) => setFilters((p) => ({ ...p, paidStatus: e.target.value }))}><option value="">Status</option><option value="PENDING">Pendente</option><option value="PAID">Pago</option></select>
+                      <div className="rounded-lg border border-zinc-700/60 bg-zinc-900/40 px-2 py-2 text-xs text-zinc-300 md:w-44">{filters.fromDate}</div>
+                      <div className="rounded-lg border border-zinc-700/60 bg-zinc-900/40 px-2 py-2 text-xs text-zinc-300 md:w-44">{filters.toDate}</div>
+                      <select className="input md:w-52" value={filters.tagId} onChange={(e) => setFilters((p) => ({ ...p, tagId: e.target.value }))}><option value="">Tag</option>{activeTags.map((tag) => <option key={tag.id} value={tag.id}>{tag.name}</option>)}</select>
+                      <button className="btn-muted" type="button" onClick={() => setFilters({ search: "", type: "", tagId: "", paidStatus: "", ...monthRange() })}>Limpar</button>
+                      <button className="btn-muted" type="button" onClick={exportCsv}>Exportar</button>
+                    </div>
+                    <button
+                      type="button"
+                      className="shrink-0 text-sm text-cyan-300 underline decoration-cyan-500/60 underline-offset-2 hover:text-cyan-200"
+                      onClick={() => setShowTransactionsHistory(true)}
+                    >
+                      Histórico
+                    </button>
                   </div>
                   <div className="space-y-2">
                     {transactions.slice(0, 80).map((t) => (
@@ -1596,7 +1719,10 @@ export default function App() {
                             <span className="text-sm">{t.description || "Sem descrição"}</span>
                             <span className={`rounded-full px-2 py-0.5 text-[10px] ${t.paidAt ? "bg-emerald-900/40 text-emerald-300" : "bg-amber-900/40 text-amber-300"}`}>{t.paidAt ? "Pago" : "Pendente"}</span>
                           </div>
-                          <p className="text-xs text-zinc-400">{new Date(t.dueDate).toLocaleDateString("pt-BR")}</p>
+                          <p className="text-xs text-zinc-400">
+                            Ocorrência: {new Date(t.dueDate).toLocaleDateString("pt-BR")}
+                            {t.settlementDueDate ? ` • Vence em ${new Date(t.settlementDueDate).toLocaleDateString("pt-BR")}` : ""}
+                          </p>
                           {t.tags?.length ? (
                             <div className="mt-1 flex flex-wrap gap-1">
                               {t.tags.map((link) => (
@@ -1616,7 +1742,7 @@ export default function App() {
                           >
                             {t.paidAt ? "Pendente" : "Pago"}
                           </button>
-                          <button className="btn-muted" type="button" onClick={() => setEditTx({ id: t.id, type: t.type, amount: moneyInput(t.amountCents / 100), description: t.description || "", dueDate: dateInput(t.dueDate), paid: !!t.paidAt, tagIds: (t.tags || []).map((link) => link.tagId) })}>Editar</button>
+                          <button className="btn-muted" type="button" onClick={() => setEditTx({ id: t.id, type: t.type, amount: moneyInput(t.amountCents / 100), description: t.description || "", dueDate: dateInput(t.dueDate), settlementDueDate: dateInput(t.settlementDueDate), paid: !!t.paidAt, tagIds: (t.tags || []).map((link) => link.tagId) })}>Editar</button>
                           <button className="btn-danger" type="button" onClick={() => openConfirm("Excluir transação", "Esta ação não pode ser desfeita.", async () => { await window.api.transactions.delete({ id: t.id }); load(); })}>Excluir</button>
                         </div>
                       </div>
@@ -1630,13 +1756,22 @@ export default function App() {
               <section className="panel space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="panel-title mb-0">Histórico completo (real + fixos/planos)</h3>
-                  <button
-                    className="btn-muted"
-                    type="button"
-                    onClick={() => loadTransactionsHistory(walletId, transactionsHistoryFilters)}
-                  >
-                    Atualizar
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      className="text-sm text-cyan-300 underline decoration-cyan-500/60 underline-offset-2 hover:text-cyan-200"
+                      type="button"
+                      onClick={() => setShowTransactionsHistory(false)}
+                    >
+                      Ocultar
+                    </button>
+                    <button
+                      className="btn-muted"
+                      type="button"
+                      onClick={() => loadTransactionsHistory(walletId, transactionsHistoryFilters)}
+                    >
+                      Atualizar
+                    </button>
+                  </div>
                 </div>
                 <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-6">
                   <input
@@ -1727,205 +1862,200 @@ export default function App() {
           </div>
         ) : null}
 
-        {activeTab === "plans" ? (
-          <div className="tab-panel space-y-4">
-            <section className="panel">
-              <div className="mb-2 flex items-center gap-2">
-                <h3 className="panel-title mb-0">Novo plano</h3>
-                <button
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700/70 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
-                  type="button"
-                  onClick={() => openFormHelp("plans")}
-                  title="Ajuda da aba"
-                >
-                  ?
-                </button>
-              </div>
-              <form onSubmit={createPlan} className="grid gap-3 md:grid-cols-2">
-                <label className="form-field">
-                  <span className="form-label">Modelo</span>
-                  <select className="input" value={planForm.type} onChange={(e) => setPlanForm((p) => ({ ...p, type: e.target.value }))}><option value="RECURRING">Recorrente</option><option value="INSTALLMENT">Parcelado</option></select>
-                </label>
-                <label className="form-field">
-                  <span className="form-label">Tipo de lançamento</span>
-                  <select className="input" value={planForm.transactionType} onChange={(e) => setPlanForm((p) => ({ ...p, transactionType: e.target.value }))}><option value="EXPENSE">Despesa</option><option value="INCOME">Receita</option></select>
-                </label>
-                <label className="form-field">
-                  <span className="form-label">Valor</span>
-                  <input className="input" type="text" inputMode="numeric" placeholder="R$ 0,00" value={planForm.amount} onChange={(e) => setPlanForm((p) => ({ ...p, amount: maskMoneyInput(e.target.value) }))} />
-                </label>
-                <label className="form-field">
-                  <span className="form-label">Descrição</span>
-                  <input className="input" placeholder="Ex: Curso de inglês" value={planForm.description} onChange={(e) => setPlanForm((p) => ({ ...p, description: e.target.value }))} />
-                </label>
-                <label className="form-field">
-                  <span className="form-label">Data inicial</span>
-                  <input className="input" type="date" value={planForm.startDate} onChange={(e) => setPlanForm((p) => ({ ...p, startDate: e.target.value }))} />
-                </label>
-                {planForm.type === "RECURRING" ? (
-                  <label className="form-field">
-                    <span className="form-label">Recorrência</span>
-                    <select className="input" value={planForm.recurrenceUnit} onChange={(e) => setPlanForm((p) => ({ ...p, recurrenceUnit: e.target.value }))}><option value="MONTHLY">Mensal</option><option value="WEEKLY">Semanal</option><option value="YEARLY">Anual</option></select>
-                  </label>
-                ) : (
-                  <label className="form-field">
-                    <span className="form-label">Quantidade de parcelas</span>
-                    <input className="input" type="number" min="1" value={planForm.installments} onChange={(e) => setPlanForm((p) => ({ ...p, installments: e.target.value }))} />
-                  </label>
-                )}
-                <div className="space-y-2 md:col-span-2">
-                  <div className="form-label">Tags do plano (opcional)</div>
-                  <select className="input" value="" onChange={(e) => handleTagSelect("plan", e.target.value)}>
-                    <option value="">Selecionar tag...</option>
-                    {activeTags
-                      .filter((tag) => !selectedTagIdsForTarget("plan").includes(tag.id))
-                      .map((tag) => (
-                        <option key={tag.id} value={tag.id}>{tag.name}</option>
-                      ))}
-                    <option value="__create_tag__">+ Criar</option>
-                  </select>
-                  {selectedTagIdsForTarget("plan").length ? (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedTagIdsForTarget("plan").map((tagId) => {
-                        const tag = activeTags.find((t) => t.id === tagId);
-                        if (!tag) return null;
-                        return (
-                          <div key={tag.id} className="flex items-center gap-1 rounded-full bg-zinc-900/70 pl-2 pr-1 py-0.5" style={{ border: `1px solid ${tag.color || "#334155"}99` }}>
-                            <span className="text-[11px] text-zinc-100">{tag.name}</span>
-                            <button className="tag-action-btn" type="button" onClick={() => openEditTagModal("plan", tag)}>Editar</button>
-                            <button className="tag-action-btn tag-action-btn-danger" type="button" onClick={() => openDeleteTagModal("plan", tag)}>Excluir</button>
-                            <button className="tag-action-btn" type="button" onClick={() => removeTagFromTarget("plan", tag.id)}>x</button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : null}
-                </div>
-                <div className="form-actions md:col-span-2">
-                  <button className="btn-primary" type="submit" disabled={!!actionBusy.createPlan}>Salvar</button>
-                </div>
-              </form>
-            </section>
-            <section className="panel">
-              <h3 className="panel-title">Planos cadastrados</h3>
-              <div className="space-y-2">
-                {plans.slice(0, 40).map((p) => (
-                  <div key={p.id} className="tx-row">
-                    <div>
-                      <p className="text-sm">{p.description || "Sem descrição"}</p>
-                      <p className="text-xs text-zinc-400">{p.type} - {money(p.amountCents / 100)}</p>
-                      {p.tags?.length ? (
-                        <div className="mt-1 flex flex-wrap gap-1">
-                          {p.tags.map((link) => (
-                            <span key={`${p.id}-${link.tagId}`} className="rounded-full px-2 py-0.5 text-[10px] text-zinc-100" style={{ backgroundColor: `${link.tag?.color || "#334155"}88` }}>
-                              {link.tag?.name}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                    <div className="text-xs text-zinc-500">{p.occurrences?.length || 0} ocorrências</div>
-                    <div><button className="btn-danger" type="button" onClick={() => openConfirm("Excluir plano", "As ocorrências futuras deste plano serão removidas.", async () => { await window.api.plans.delete({ id: p.id }); load(); })}>Excluir</button></div>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-        ) : null}
-
         {activeTab === "fixed" ? (
           <div className="tab-panel space-y-4">
             <section className="panel">
-              <div className="mb-2 flex items-center gap-2">
-                <h3 className="panel-title mb-0">Novo lançamento fixo mensal</h3>
-                <button
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700/70 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
-                  type="button"
-                  onClick={() => openFormHelp("fixed")}
-                  title="Ajuda da aba"
-                >
-                  ?
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="panel-title mb-0">Novo Programado</h3>
+                  <button
+                    className="icon-ghost-btn help-icon-btn"
+                    type="button"
+                    onClick={() => openFormHelp("fixed")}
+                    title="Ajuda da aba"
+                  >
+                    <HelpCircleIcon className="h-4 w-4" />
+                  </button>
+                </div>
+                <button className="btn-muted" type="button" onClick={() => setShowScheduledForm((v) => !v)}>
+                  {showScheduledForm ? "-" : "+"}
                 </button>
               </div>
-              <form onSubmit={createFixed} className="grid gap-3 md:grid-cols-2">
-                <label className="form-field">
-                  <span className="form-label">Tipo de fixo</span>
-                  <select className="input" value={fixedForm.transactionType} onChange={(e) => setFixedForm((p) => ({ ...p, transactionType: e.target.value }))}>
-                    <option value="EXPENSE">Despesa fixa</option>
-                    <option value="INCOME">Receita fixa</option>
-                  </select>
-                </label>
-                <label className="form-field">
-                  <span className="form-label">Valor mensal</span>
-                  <input className="input" type="text" inputMode="numeric" placeholder="R$ 0,00" value={fixedForm.amount} onChange={(e) => setFixedForm((p) => ({ ...p, amount: maskMoneyInput(e.target.value) }))} />
-                </label>
-                <label className="form-field md:col-span-2">
-                  <span className="form-label">Descrição</span>
-                  <input className="input" placeholder="Ex: Salário, Aluguel, Internet" value={fixedForm.description} onChange={(e) => setFixedForm((p) => ({ ...p, description: e.target.value }))} />
-                </label>
-                <label className="form-field">
-                  <span className="form-label">Dia do vencimento</span>
-                  <input
-                    className="input"
-                    type="number"
-                    min="1"
-                    max="31"
-                    value={fixedForm.dueDay}
-                    onChange={(e) => setFixedForm((p) => ({ ...p, dueDay: e.target.value }))}
-                  />
-                </label>
-                <label className="form-field">
-                  <span className="form-label">Inicia em</span>
-                  <input
-                    className="input"
-                    type="month"
-                    value={fixedForm.startMonth}
-                    onChange={(e) => setFixedForm((p) => ({ ...p, startMonth: e.target.value }))}
-                  />
-                </label>
-                <div className="space-y-2 md:col-span-2">
-                  <div className="form-label">Tags do fixo (opcional)</div>
-                  <select className="input" value="" onChange={(e) => handleTagSelect("fixed", e.target.value)}>
-                    <option value="">Selecionar tag...</option>
-                    {activeTags
-                      .filter((tag) => !selectedTagIdsForTarget("fixed").includes(tag.id))
-                      .map((tag) => (
-                        <option key={tag.id} value={tag.id}>{tag.name}</option>
-                      ))}
-                    <option value="__create_tag__">+ Criar</option>
-                  </select>
-                  {selectedTagIdsForTarget("fixed").length ? (
-                    <div className="flex flex-wrap gap-1">
-                      {selectedTagIdsForTarget("fixed").map((tagId) => {
-                        const tag = activeTags.find((t) => t.id === tagId);
-                        if (!tag) return null;
-                        return (
-                          <div key={tag.id} className="flex items-center gap-1 rounded-full bg-zinc-900/70 pl-2 pr-1 py-0.5" style={{ border: `1px solid ${tag.color || "#334155"}99` }}>
-                            <span className="text-[11px] text-zinc-100">{tag.name}</span>
-                            <button className="tag-action-btn" type="button" onClick={() => openEditTagModal("fixed", tag)}>Editar</button>
-                            <button className="tag-action-btn tag-action-btn-danger" type="button" onClick={() => openDeleteTagModal("fixed", tag)}>Excluir</button>
-                            <button className="tag-action-btn" type="button" onClick={() => removeTagFromTarget("fixed", tag.id)}>x</button>
+              <div className={`overflow-hidden transition-all duration-300 ${showScheduledForm ? "max-h-[1600px] opacity-100" : "max-h-0 opacity-0"}`}>
+                <div className="pt-1">
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <button className={`btn-segment ${scheduledMode === "FIXED" ? "btn-segment-active" : ""}`} type="button" onClick={() => setScheduledMode("FIXED")}>Fixo mensal</button>
+                    <button className={`btn-segment ${scheduledMode === "INSTALLMENT" ? "btn-segment-active" : ""}`} type="button" onClick={() => setScheduledMode("INSTALLMENT")}>Parcelado</button>
+                    <button className={`btn-segment ${scheduledMode === "RECURRING_PERIOD" ? "btn-segment-active" : ""}`} type="button" onClick={() => setScheduledMode("RECURRING_PERIOD")}>Recorrente por período</button>
+                  </div>
+                  <form onSubmit={createScheduled} className="form-shell">
+                    {scheduledMode === "FIXED" ? (
+                      <>
+                        <div className="form-row form-row-4-compact">
+                          <label className="form-field">
+                            <span className="form-label">Tipo</span>
+                            <select className="input" value={fixedForm.transactionType} onChange={(e) => setFixedForm((p) => ({ ...p, transactionType: e.target.value }))}>
+                              <option value="EXPENSE">Despesa</option>
+                              <option value="INCOME">Receita</option>
+                            </select>
+                          </label>
+                          <label className="form-field">
+                            <span className="form-label">Valor mensal</span>
+                            <input className="input" type="text" inputMode="numeric" placeholder="R$ 0,00" value={fixedForm.amount} onChange={(e) => setFixedForm((p) => ({ ...p, amount: maskMoneyInput(e.target.value) }))} />
+                          </label>
+                          <label className="form-field">
+                            <span className="form-label">Dia do vencimento</span>
+                            <input className="input" type="number" min="1" max="31" value={fixedForm.dueDay} onChange={(e) => setFixedForm((p) => ({ ...p, dueDay: e.target.value }))} />
+                          </label>
+                          <label className="form-field">
+                            <span className="form-label">Inicia em</span>
+                            <input className="input" type="month" value={fixedForm.startMonth} onChange={(e) => setFixedForm((p) => ({ ...p, startMonth: e.target.value }))} />
+                          </label>
+                        </div>
+                        <div className="form-row form-row-1">
+                          <label className="form-field">
+                            <span className="form-label">Descrição</span>
+                            <input className="input" placeholder="Ex: Salário, Aluguel, Internet" value={fixedForm.description} onChange={(e) => setFixedForm((p) => ({ ...p, description: e.target.value }))} />
+                          </label>
+                        </div>
+                        <div className="form-row-tags space-y-2">
+                          <div className="form-label">Tags (opcional)</div>
+                          <select className="input" value="" onChange={(e) => handleTagSelect("fixed", e.target.value)}>
+                            <option value="">Selecionar tag...</option>
+                            {activeTags.filter((tag) => !selectedTagIdsForTarget("fixed").includes(tag.id)).map((tag) => (
+                              <option key={tag.id} value={tag.id}>{tag.name}</option>
+                            ))}
+                            <option value="__create_tag__">+ Criar</option>
+                          </select>
+                          {selectedTagIdsForTarget("fixed").length ? (
+                            <div className="flex flex-wrap gap-1">
+                              {selectedTagIdsForTarget("fixed").map((tagId) => {
+                                const tag = activeTags.find((t) => t.id === tagId);
+                                if (!tag) return null;
+                                return (
+                                  <div key={tag.id} className="flex items-center gap-1 rounded-full bg-zinc-900/70 pl-2 pr-1 py-0.5" style={{ border: `1px solid ${tag.color || "#334155"}99` }}>
+                                    <span className="text-[11px] text-zinc-100">{tag.name}</span>
+                                    <button className="tag-action-btn" type="button" onClick={() => openEditTagModal("fixed", tag)}>Editar</button>
+                                    <button className="tag-action-btn tag-action-btn-danger" type="button" onClick={() => openDeleteTagModal("fixed", tag)}>Excluir</button>
+                                    <button className="tag-action-btn" type="button" onClick={() => removeTagFromTarget("fixed", tag.id)}>x</button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        {scheduledMode === "INSTALLMENT" ? (
+                          <div className="form-row form-row-4-compact">
+                            <label className="form-field">
+                              <span className="form-label">Tipo</span>
+                              <select className="input" value={planForm.transactionType} onChange={(e) => setPlanForm((p) => ({ ...p, transactionType: e.target.value }))}>
+                                <option value="EXPENSE">Despesa</option>
+                                <option value="INCOME">Receita</option>
+                              </select>
+                            </label>
+                            <label className="form-field">
+                              <span className="form-label">Valor da parcela</span>
+                              <input className="input" type="text" inputMode="numeric" placeholder="R$ 0,00" value={planForm.amount} onChange={(e) => setPlanForm((p) => ({ ...p, amount: maskMoneyInput(e.target.value) }))} />
+                            </label>
+                            <label className="form-field">
+                              <span className="form-label">Primeiro vencimento</span>
+                              <input className="input" type="date" value={planForm.startDate} onChange={(e) => setPlanForm((p) => ({ ...p, startDate: e.target.value }))} />
+                            </label>
+                            <label className="form-field">
+                              <span className="form-label">Quantidade de parcelas</span>
+                              <input className="input" type="number" min="1" value={planForm.installments} onChange={(e) => setPlanForm((p) => ({ ...p, installments: e.target.value }))} />
+                            </label>
                           </div>
-                        );
-                      })}
+                        ) : (
+                          <>
+                            <div className="form-row form-row-5-compact">
+                              <label className="form-field">
+                                <span className="form-label">Tipo</span>
+                                <select className="input" value={planForm.transactionType} onChange={(e) => setPlanForm((p) => ({ ...p, transactionType: e.target.value }))}>
+                                  <option value="EXPENSE">Despesa</option>
+                                  <option value="INCOME">Receita</option>
+                                </select>
+                              </label>
+                              <label className="form-field">
+                                <span className="form-label">Valor</span>
+                                <input className="input" type="text" inputMode="numeric" placeholder="R$ 0,00" value={planForm.amount} onChange={(e) => setPlanForm((p) => ({ ...p, amount: maskMoneyInput(e.target.value) }))} />
+                              </label>
+                              <label className="form-field">
+                                <span className="form-label">Data inicial</span>
+                                <input className="input" type="date" value={planForm.startDate} onChange={(e) => setPlanForm((p) => ({ ...p, startDate: e.target.value }))} />
+                              </label>
+                              <label className="form-field">
+                                <span className="form-label">Data final</span>
+                                <input className="input" type="date" value={planForm.endDate} onChange={(e) => setPlanForm((p) => ({ ...p, endDate: e.target.value }))} />
+                              </label>
+                              <label className="form-field">
+                                <span className="form-label">Recorrência</span>
+                                <select className="input" value={planForm.recurrenceUnit} onChange={(e) => setPlanForm((p) => ({ ...p, recurrenceUnit: e.target.value }))}>
+                                  <option value="MONTHLY">Mensal</option>
+                                  <option value="WEEKLY">Semanal</option>
+                                  <option value="YEARLY">Anual</option>
+                                </select>
+                              </label>
+                            </div>
+                          </>
+                        )}
+                        <div className="form-row form-row-1">
+                          <label className="form-field">
+                            <span className="form-label">Descrição</span>
+                            <input className="input" placeholder={scheduledMode === "INSTALLMENT" ? "Ex: Curso de inglês" : "Ex: Terapia por 6 meses"} value={planForm.description} onChange={(e) => setPlanForm((p) => ({ ...p, description: e.target.value }))} />
+                          </label>
+                        </div>
+                        <div className="form-row-tags space-y-2">
+                          <div className="form-label">Tags (opcional)</div>
+                          <select className="input" value="" onChange={(e) => handleTagSelect("plan", e.target.value)}>
+                            <option value="">Selecionar tag...</option>
+                            {activeTags.filter((tag) => !selectedTagIdsForTarget("plan").includes(tag.id)).map((tag) => (
+                              <option key={tag.id} value={tag.id}>{tag.name}</option>
+                            ))}
+                            <option value="__create_tag__">+ Criar</option>
+                          </select>
+                          {selectedTagIdsForTarget("plan").length ? (
+                            <div className="flex flex-wrap gap-1">
+                              {selectedTagIdsForTarget("plan").map((tagId) => {
+                                const tag = activeTags.find((t) => t.id === tagId);
+                                if (!tag) return null;
+                                return (
+                                  <div key={tag.id} className="flex items-center gap-1 rounded-full bg-zinc-900/70 pl-2 pr-1 py-0.5" style={{ border: `1px solid ${tag.color || "#334155"}99` }}>
+                                    <span className="text-[11px] text-zinc-100">{tag.name}</span>
+                                    <button className="tag-action-btn" type="button" onClick={() => openEditTagModal("plan", tag)}>Editar</button>
+                                    <button className="tag-action-btn tag-action-btn-danger" type="button" onClick={() => openDeleteTagModal("plan", tag)}>Excluir</button>
+                                    <button className="tag-action-btn" type="button" onClick={() => removeTagFromTarget("plan", tag.id)}>x</button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                        </div>
+                      </>
+                    )}
+                    <div className="form-actions">
+                      <button className="btn-primary" type="submit" disabled={!!actionBusy.createFixed || !!actionBusy.createPlan}>Salvar</button>
                     </div>
-                  ) : null}
+                  </form>
                 </div>
-                <div className="form-actions md:col-span-2">
-                  <button className="btn-primary" type="submit" disabled={!!actionBusy.createFixed}>Salvar</button>
-                </div>
-              </form>
+              </div>
             </section>
 
             <section className="panel">
-              <h3 className="panel-title">Fixos cadastrados</h3>
+              <h3 className="panel-title">Lançamentos programados</h3>
               <div className="space-y-2">
-                {fixedPlans.slice(0, 60).map((p) => (
+                {scheduledPlans.slice(0, 80).map((p) => (
                   <div key={p.id} className="tx-row">
                     <div>
                       <p className="text-sm">{p.description || "Sem descrição"}</p>
                       <p className="text-xs text-zinc-400">
-                        {p.transactionType === "INCOME" ? "Receita" : "Despesa"} mensal - {money(p.amountCents / 100)} - dia {datePartsUTC(p.startDate).day}
+                        {scheduledPlanLabel(p)} • {p.transactionType === "INCOME" ? "Receita" : "Despesa"} • {money(p.amountCents / 100)}
+                        {scheduledModeFromPlan(p) === "FIXED" ? ` • dia ${datePartsUTC(p.startDate).day}` : ""}
+                        {scheduledModeFromPlan(p) === "INSTALLMENT" ? ` • ${p.installments || 0} parcelas` : ""}
+                        {scheduledModeFromPlan(p) === "RECURRING_PERIOD" && p.endDate ? ` • até ${new Date(p.endDate).toLocaleDateString("pt-BR")}` : ""}
                       </p>
                       {p.tags?.length ? (
                         <div className="mt-1 flex flex-wrap gap-1">
@@ -1962,7 +2092,7 @@ export default function App() {
                     </div>
                   </div>
                 ))}
-                {fixedPlans.length === 0 ? <p className="text-sm text-zinc-500">Nenhum lançamento fixo cadastrado.</p> : null}
+                {scheduledPlans.length === 0 ? <p className="text-sm text-zinc-500">Nenhum lançamento programado cadastrado.</p> : null}
               </div>
             </section>
           </div>
@@ -1974,12 +2104,12 @@ export default function App() {
               <div className="mb-2 flex items-center gap-2">
                 <h3 className="panel-title mb-0">Nova meta</h3>
                 <button
-                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-zinc-700/70 text-[10px] text-zinc-400 hover:border-zinc-500 hover:text-zinc-200"
+                  className="icon-ghost-btn help-icon-btn"
                   type="button"
                   onClick={() => openFormHelp("goals")}
                   title="Ajuda da aba"
                 >
-                  ?
+                  <HelpCircleIcon className="h-4 w-4" />
                 </button>
               </div>
               <form onSubmit={createGoal} className="grid gap-3 md:grid-cols-5">
@@ -2177,12 +2307,15 @@ export default function App() {
 
       {editTx ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <form className="w-full max-w-md space-y-2 rounded-xl border border-zinc-700 bg-zinc-900 p-4" onSubmit={async (e) => { e.preventDefault(); const ok = await runAction("saveTxEdit", "Erro ao atualizar transação.", async () => { await window.api.transactions.update({ id: editTx.id, type: editTx.type, amount: parseMoneyInput(editTx.amount), description: editTx.description, dueDate: editTx.dueDate, paidAt: editTx.paid ? new Date().toISOString() : null, tagIds: editTx.tagIds || [] }); }); if (!ok) return; setEditTx(null); load(); }}>
+          <form className="w-full max-w-md space-y-2 rounded-xl border border-zinc-700 bg-zinc-900 p-4" onSubmit={async (e) => { e.preventDefault(); const ok = await runAction("saveTxEdit", "Erro ao atualizar transação.", async () => { await window.api.transactions.update({ id: editTx.id, type: editTx.type, amount: parseMoneyInput(editTx.amount), description: editTx.description, dueDate: editTx.dueDate, settlementDueDate: editTx.settlementDueDate, paidAt: editTx.paid ? new Date().toISOString() : null, tagIds: editTx.tagIds || [] }); }); if (!ok) return; setEditTx(null); load(); }}>
             <h3 className="panel-title">Editar transação</h3>
             <select className="input" value={editTx.type} onChange={(e) => setEditTx((p) => ({ ...p, type: e.target.value }))}><option value="EXPENSE">Despesa</option><option value="INCOME">Receita</option></select>
             <input className="input" type="text" inputMode="numeric" value={editTx.amount} onChange={(e) => setEditTx((p) => ({ ...p, amount: maskMoneyInput(e.target.value) }))} />
             <input className="input" value={editTx.description} onChange={(e) => setEditTx((p) => ({ ...p, description: e.target.value }))} />
-            <input className="input" type="date" value={editTx.dueDate} onChange={(e) => setEditTx((p) => ({ ...p, dueDate: e.target.value }))} />
+            <div className="grid gap-2 sm:grid-cols-2">
+              <input className="input" type="date" value={editTx.dueDate} onChange={(e) => setEditTx((p) => ({ ...p, dueDate: e.target.value }))} />
+              <input className="input" type="date" value={editTx.settlementDueDate || ""} onChange={(e) => setEditTx((p) => ({ ...p, settlementDueDate: e.target.value }))} />
+            </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-xs text-zinc-400">Tags (opcional)</span>
@@ -2242,19 +2375,39 @@ export default function App() {
       {editFixed ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <form className="w-full max-w-md space-y-2 rounded-xl border border-zinc-700 bg-zinc-900 p-4" onSubmit={saveFixedEdit}>
-            <h3 className="panel-title">Editar lançamento fixo</h3>
+            <h3 className="panel-title">Editar {scheduledPlanLabel(editFixed).toLowerCase()}</h3>
             <select className="input" value={editFixed.transactionType} onChange={(e) => setEditFixed((p) => ({ ...p, transactionType: e.target.value }))}>
-              <option value="EXPENSE">Despesa fixa</option>
-              <option value="INCOME">Receita fixa</option>
+              <option value="EXPENSE">Despesa</option>
+              <option value="INCOME">Receita</option>
             </select>
             <input className="input" type="text" inputMode="numeric" value={editFixed.amount} onChange={(e) => setEditFixed((p) => ({ ...p, amount: maskMoneyInput(e.target.value) }))} />
-            <input className="input" value={editFixed.description} onChange={(e) => setEditFixed((p) => ({ ...p, description: e.target.value }))} />
-            <div className="grid grid-cols-2 gap-2">
-              <input className="input" type="number" min="1" max="31" value={editFixed.dueDay} onChange={(e) => setEditFixed((p) => ({ ...p, dueDay: e.target.value }))} />
-              <input className="input" type="month" value={editFixed.startMonth} onChange={(e) => setEditFixed((p) => ({ ...p, startMonth: e.target.value }))} />
+            <div className={`grid gap-2 ${editFixed.mode === "RECURRING_PERIOD" ? "sm:grid-cols-2" : "sm:grid-cols-1"}`}>
+              <input className="input" value={editFixed.description} onChange={(e) => setEditFixed((p) => ({ ...p, description: e.target.value }))} />
+              {editFixed.mode === "RECURRING_PERIOD" ? (
+                <select className="input" value={editFixed.recurrenceUnit} onChange={(e) => setEditFixed((p) => ({ ...p, recurrenceUnit: e.target.value }))}>
+                  <option value="MONTHLY">Mensal</option>
+                  <option value="WEEKLY">Semanal</option>
+                  <option value="YEARLY">Anual</option>
+                </select>
+              ) : null}
             </div>
+            {editFixed.mode === "FIXED" ? (
+              <div className="grid grid-cols-2 gap-2">
+                <input className="input" type="number" min="1" max="31" value={editFixed.dueDay} onChange={(e) => setEditFixed((p) => ({ ...p, dueDay: e.target.value }))} />
+                <input className="input" type="month" value={editFixed.startMonth} onChange={(e) => setEditFixed((p) => ({ ...p, startMonth: e.target.value }))} />
+              </div>
+            ) : (
+              <>
+                <input className="input" type="date" value={editFixed.startDate} onChange={(e) => setEditFixed((p) => ({ ...p, startDate: e.target.value }))} />
+                {editFixed.mode === "INSTALLMENT" ? (
+                  <input className="input" type="number" min="1" value={editFixed.installments} onChange={(e) => setEditFixed((p) => ({ ...p, installments: e.target.value }))} />
+                ) : (
+                  <input className="input" type="date" value={editFixed.endDate || ""} onChange={(e) => setEditFixed((p) => ({ ...p, endDate: e.target.value }))} />
+                )}
+              </>
+            )}
             <div className="space-y-2">
-              <div className="text-xs text-zinc-400">Tags do fixo (opcional)</div>
+              <div className="text-xs text-zinc-400">Tags (opcional)</div>
               <select className="input" value="" onChange={(e) => handleTagSelect("fixedEdit", e.target.value)}>
                 <option value="">Selecionar tag...</option>
                 {activeTags
@@ -2322,7 +2475,7 @@ export default function App() {
           <div className="w-full max-w-2xl rounded-xl border border-zinc-700 bg-zinc-900 p-4">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="panel-title">Tipos de investimento (resumo)</h3>
-              <button className="btn-muted" type="button" onClick={() => setShowInvestmentHelp(false)}>X</button>
+              <button className="btn-muted inline-flex items-center justify-center" type="button" onClick={() => setShowInvestmentHelp(false)}><CloseIcon /></button>
             </div>
             <div className="grid gap-2 md:grid-cols-2">
               {(investmentMarket.instruments || []).map((inst) => (
@@ -2343,7 +2496,7 @@ export default function App() {
           <div className="w-full max-w-lg rounded-xl border border-zinc-700 bg-zinc-900 p-4">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="panel-title mb-0">{formHelpModal.title}</h3>
-              <button className="btn-muted" type="button" onClick={() => setFormHelpModal(null)}>X</button>
+              <button className="btn-muted inline-flex items-center justify-center" type="button" onClick={() => setFormHelpModal(null)}><CloseIcon /></button>
             </div>
             <p className="text-sm text-zinc-300">{formHelpModal.text}</p>
           </div>
@@ -2355,7 +2508,7 @@ export default function App() {
           <div className="w-full max-w-lg rounded-xl border border-zinc-700 bg-zinc-900 p-4">
             <div className="mb-2 flex items-center justify-between">
               <h3 className="panel-title mb-0">Sobre este projeto</h3>
-              <button className="btn-muted" type="button" onClick={() => setShowAboutBadgeModal(false)}>X</button>
+              <button className="btn-muted inline-flex items-center justify-center" type="button" onClick={() => setShowAboutBadgeModal(false)}><CloseIcon /></button>
             </div>
             <div className="space-y-2 text-sm text-zinc-300">
               <p><span className="text-zinc-400">Autor:</span> Eduardo Brumatti Monteiro</p>
@@ -2428,6 +2581,35 @@ function FinanceTooltip({ active, payload, label }) {
         ))}
       </div>
     </div>
+  );
+}
+
+function HelpCircleIcon({ className = "h-3.5 w-3.5" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.3 9a2.7 2.7 0 1 1 4.7 1.8c-.84.8-1.5 1.3-1.5 2.7" />
+      <path d="M12 16.9h.01" />
+    </svg>
+  );
+}
+
+function InfoCircleIcon({ className = "h-3.5 w-3.5" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 10.5v5" />
+      <path d="M12 7.6h.01" />
+    </svg>
+  );
+}
+
+function CloseIcon({ className = "h-3.5 w-3.5" }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M18 6 6 18" />
+      <path d="m6 6 12 12" />
+    </svg>
   );
 }
 

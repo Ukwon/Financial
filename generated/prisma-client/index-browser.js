@@ -142,6 +142,7 @@ exports.Prisma.TransactionScalarFieldEnum = {
   description: 'description',
   amountCents: 'amountCents',
   dueDate: 'dueDate',
+  settlementDueDate: 'settlementDueDate',
   paidAt: 'paidAt',
   sourcePlanId: 'sourcePlanId',
   installmentIndex: 'installmentIndex',

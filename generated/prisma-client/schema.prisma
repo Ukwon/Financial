@@ -52,27 +52,29 @@ model Category {
 }
 
 model Transaction {
-  id               String           @id @default(cuid())
-  walletId         String
-  categoryId       String?
-  type             TransactionType
-  description      String?
-  amountCents      Int
-  dueDate          DateTime
-  paidAt           DateTime?
-  sourcePlanId     String?
-  installmentIndex Int?
-  installmentTotal Int?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  wallet           Wallet           @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  category         Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  sourcePlan       Plan?            @relation("PlanTransactions", fields: [sourcePlanId], references: [id], onDelete: SetNull)
-  goalAllocations  GoalAllocation[]
-  tags             TransactionTag[]
+  id                String           @id @default(cuid())
+  walletId          String
+  categoryId        String?
+  type              TransactionType
+  description       String?
+  amountCents       Int
+  dueDate           DateTime
+  settlementDueDate DateTime?
+  paidAt            DateTime?
+  sourcePlanId      String?
+  installmentIndex  Int?
+  installmentTotal  Int?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  wallet            Wallet           @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  category          Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  sourcePlan        Plan?            @relation("PlanTransactions", fields: [sourcePlanId], references: [id], onDelete: SetNull)
+  goalAllocations   GoalAllocation[]
+  tags              TransactionTag[]
 
   @@index([walletId, dueDate])
   @@index([type, dueDate])
+  @@index([settlementDueDate])
 }
 
 model Tag {

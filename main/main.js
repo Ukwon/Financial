@@ -213,6 +213,7 @@ async function restoreBackupData(prisma, payload) {
           description: t.description || null,
           amountCents: Number(t.amountCents || 0),
           dueDate: toDate(t.dueDate) || new Date(),
+          settlementDueDate: toDate(t.settlementDueDate),
           paidAt: toDate(t.paidAt),
           sourcePlanId: t.sourcePlanId || null,
           installmentIndex: t.installmentIndex || null,
@@ -573,6 +574,7 @@ async function registerIpc() {
           description: payload.description || null,
           amountCents: Math.round(Number(payload.amount) * 100),
           dueDate: toDate(payload.dueDate) || new Date(),
+          settlementDueDate: toDate(payload.settlementDueDate),
           paidAt: toDate(payload.paidAt),
           sourcePlanId: payload.sourcePlanId || null,
           installmentIndex: payload.installmentIndex || null,
@@ -603,6 +605,7 @@ async function registerIpc() {
           description: payload.description || null,
           amountCents: Math.round(Number(payload.amount) * 100),
           dueDate: toDate(payload.dueDate) || new Date(),
+          settlementDueDate: toDate(payload.settlementDueDate),
           paidAt: toDate(payload.paidAt)
         }
       });

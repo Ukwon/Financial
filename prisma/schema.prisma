@@ -59,6 +59,7 @@ model Transaction {
   description      String?
   amountCents      Int
   dueDate          DateTime
+  settlementDueDate DateTime?
   paidAt           DateTime?
   sourcePlanId     String?
   installmentIndex Int?
@@ -73,6 +74,7 @@ model Transaction {
 
   @@index([walletId, dueDate])
   @@index([type, dueDate])
+  @@index([settlementDueDate])
 }
 
 model Tag {

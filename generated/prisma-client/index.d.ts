@@ -4398,6 +4398,7 @@ export namespace Prisma {
     description: string | null
     amountCents: number | null
     dueDate: Date | null
+    settlementDueDate: Date | null
     paidAt: Date | null
     sourcePlanId: string | null
     installmentIndex: number | null
@@ -4414,6 +4415,7 @@ export namespace Prisma {
     description: string | null
     amountCents: number | null
     dueDate: Date | null
+    settlementDueDate: Date | null
     paidAt: Date | null
     sourcePlanId: string | null
     installmentIndex: number | null
@@ -4430,6 +4432,7 @@ export namespace Prisma {
     description: number
     amountCents: number
     dueDate: number
+    settlementDueDate: number
     paidAt: number
     sourcePlanId: number
     installmentIndex: number
@@ -4460,6 +4463,7 @@ export namespace Prisma {
     description?: true
     amountCents?: true
     dueDate?: true
+    settlementDueDate?: true
     paidAt?: true
     sourcePlanId?: true
     installmentIndex?: true
@@ -4476,6 +4480,7 @@ export namespace Prisma {
     description?: true
     amountCents?: true
     dueDate?: true
+    settlementDueDate?: true
     paidAt?: true
     sourcePlanId?: true
     installmentIndex?: true
@@ -4492,6 +4497,7 @@ export namespace Prisma {
     description?: true
     amountCents?: true
     dueDate?: true
+    settlementDueDate?: true
     paidAt?: true
     sourcePlanId?: true
     installmentIndex?: true
@@ -4595,6 +4601,7 @@ export namespace Prisma {
     description: string | null
     amountCents: number
     dueDate: Date
+    settlementDueDate: Date | null
     paidAt: Date | null
     sourcePlanId: string | null
     installmentIndex: number | null
@@ -4630,6 +4637,7 @@ export namespace Prisma {
     description?: boolean
     amountCents?: boolean
     dueDate?: boolean
+    settlementDueDate?: boolean
     paidAt?: boolean
     sourcePlanId?: boolean
     installmentIndex?: boolean
@@ -4652,6 +4660,7 @@ export namespace Prisma {
     description?: boolean
     amountCents?: boolean
     dueDate?: boolean
+    settlementDueDate?: boolean
     paidAt?: boolean
     sourcePlanId?: boolean
     installmentIndex?: boolean
@@ -4671,6 +4680,7 @@ export namespace Prisma {
     description?: boolean
     amountCents?: boolean
     dueDate?: boolean
+    settlementDueDate?: boolean
     paidAt?: boolean
     sourcePlanId?: boolean
     installmentIndex?: boolean
@@ -4690,6 +4700,7 @@ export namespace Prisma {
     description?: boolean
     amountCents?: boolean
     dueDate?: boolean
+    settlementDueDate?: boolean
     paidAt?: boolean
     sourcePlanId?: boolean
     installmentIndex?: boolean
@@ -4698,7 +4709,7 @@ export namespace Prisma {
     updatedAt?: boolean
   }
 
-  export type TransactionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "walletId" | "categoryId" | "type" | "description" | "amountCents" | "dueDate" | "paidAt" | "sourcePlanId" | "installmentIndex" | "installmentTotal" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
+  export type TransactionOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "walletId" | "categoryId" | "type" | "description" | "amountCents" | "dueDate" | "settlementDueDate" | "paidAt" | "sourcePlanId" | "installmentIndex" | "installmentTotal" | "createdAt" | "updatedAt", ExtArgs["result"]["transaction"]>
   export type TransactionInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     wallet?: boolean | WalletDefaultArgs<ExtArgs>
     category?: boolean | Transaction$categoryArgs<ExtArgs>
@@ -4735,6 +4746,7 @@ export namespace Prisma {
       description: string | null
       amountCents: number
       dueDate: Date
+      settlementDueDate: Date | null
       paidAt: Date | null
       sourcePlanId: string | null
       installmentIndex: number | null
@@ -5176,6 +5188,7 @@ export namespace Prisma {
     readonly description: FieldRef<"Transaction", 'String'>
     readonly amountCents: FieldRef<"Transaction", 'Int'>
     readonly dueDate: FieldRef<"Transaction", 'DateTime'>
+    readonly settlementDueDate: FieldRef<"Transaction", 'DateTime'>
     readonly paidAt: FieldRef<"Transaction", 'DateTime'>
     readonly sourcePlanId: FieldRef<"Transaction", 'String'>
     readonly installmentIndex: FieldRef<"Transaction", 'Int'>
@@ -14856,6 +14869,7 @@ export namespace Prisma {
     description: 'description',
     amountCents: 'amountCents',
     dueDate: 'dueDate',
+    settlementDueDate: 'settlementDueDate',
     paidAt: 'paidAt',
     sourcePlanId: 'sourcePlanId',
     installmentIndex: 'installmentIndex',
@@ -15189,6 +15203,7 @@ export namespace Prisma {
     description?: StringNullableFilter<"Transaction"> | string | null
     amountCents?: IntFilter<"Transaction"> | number
     dueDate?: DateTimeFilter<"Transaction"> | Date | string
+    settlementDueDate?: DateTimeNullableFilter<"Transaction"> | Date | string | null
     paidAt?: DateTimeNullableFilter<"Transaction"> | Date | string | null
     sourcePlanId?: StringNullableFilter<"Transaction"> | string | null
     installmentIndex?: IntNullableFilter<"Transaction"> | number | null
@@ -15210,6 +15225,7 @@ export namespace Prisma {
     description?: SortOrderInput | SortOrder
     amountCents?: SortOrder
     dueDate?: SortOrder
+    settlementDueDate?: SortOrderInput | SortOrder
     paidAt?: SortOrderInput | SortOrder
     sourcePlanId?: SortOrderInput | SortOrder
     installmentIndex?: SortOrderInput | SortOrder
@@ -15234,6 +15250,7 @@ export namespace Prisma {
     description?: StringNullableFilter<"Transaction"> | string | null
     amountCents?: IntFilter<"Transaction"> | number
     dueDate?: DateTimeFilter<"Transaction"> | Date | string
+    settlementDueDate?: DateTimeNullableFilter<"Transaction"> | Date | string | null
     paidAt?: DateTimeNullableFilter<"Transaction"> | Date | string | null
     sourcePlanId?: StringNullableFilter<"Transaction"> | string | null
     installmentIndex?: IntNullableFilter<"Transaction"> | number | null
@@ -15255,6 +15272,7 @@ export namespace Prisma {
     description?: SortOrderInput | SortOrder
     amountCents?: SortOrder
     dueDate?: SortOrder
+    settlementDueDate?: SortOrderInput | SortOrder
     paidAt?: SortOrderInput | SortOrder
     sourcePlanId?: SortOrderInput | SortOrder
     installmentIndex?: SortOrderInput | SortOrder
@@ -15279,6 +15297,7 @@ export namespace Prisma {
     description?: StringNullableWithAggregatesFilter<"Transaction"> | string | null
     amountCents?: IntWithAggregatesFilter<"Transaction"> | number
     dueDate?: DateTimeWithAggregatesFilter<"Transaction"> | Date | string
+    settlementDueDate?: DateTimeNullableWithAggregatesFilter<"Transaction"> | Date | string | null
     paidAt?: DateTimeNullableWithAggregatesFilter<"Transaction"> | Date | string | null
     sourcePlanId?: StringNullableWithAggregatesFilter<"Transaction"> | string | null
     installmentIndex?: IntNullableWithAggregatesFilter<"Transaction"> | number | null
@@ -16009,6 +16028,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     installmentIndex?: number | null
     installmentTotal?: number | null
@@ -16029,6 +16049,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     sourcePlanId?: string | null
     installmentIndex?: number | null
@@ -16045,6 +16066,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
     installmentTotal?: NullableIntFieldUpdateOperationsInput | number | null
@@ -16065,6 +16087,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sourcePlanId?: NullableStringFieldUpdateOperationsInput | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
@@ -16083,6 +16106,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     sourcePlanId?: string | null
     installmentIndex?: number | null
@@ -16097,6 +16121,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
     installmentTotal?: NullableIntFieldUpdateOperationsInput | number | null
@@ -16112,6 +16137,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sourcePlanId?: NullableStringFieldUpdateOperationsInput | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
@@ -16990,6 +17016,7 @@ export namespace Prisma {
     description?: SortOrder
     amountCents?: SortOrder
     dueDate?: SortOrder
+    settlementDueDate?: SortOrder
     paidAt?: SortOrder
     sourcePlanId?: SortOrder
     installmentIndex?: SortOrder
@@ -17012,6 +17039,7 @@ export namespace Prisma {
     description?: SortOrder
     amountCents?: SortOrder
     dueDate?: SortOrder
+    settlementDueDate?: SortOrder
     paidAt?: SortOrder
     sourcePlanId?: SortOrder
     installmentIndex?: SortOrder
@@ -17028,6 +17056,7 @@ export namespace Prisma {
     description?: SortOrder
     amountCents?: SortOrder
     dueDate?: SortOrder
+    settlementDueDate?: SortOrder
     paidAt?: SortOrder
     sourcePlanId?: SortOrder
     installmentIndex?: SortOrder
@@ -18707,6 +18736,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     installmentIndex?: number | null
     installmentTotal?: number | null
@@ -18725,6 +18755,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     sourcePlanId?: string | null
     installmentIndex?: number | null
@@ -18913,6 +18944,7 @@ export namespace Prisma {
     description?: StringNullableFilter<"Transaction"> | string | null
     amountCents?: IntFilter<"Transaction"> | number
     dueDate?: DateTimeFilter<"Transaction"> | Date | string
+    settlementDueDate?: DateTimeNullableFilter<"Transaction"> | Date | string | null
     paidAt?: DateTimeNullableFilter<"Transaction"> | Date | string | null
     sourcePlanId?: StringNullableFilter<"Transaction"> | string | null
     installmentIndex?: IntNullableFilter<"Transaction"> | number | null
@@ -19053,6 +19085,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     installmentIndex?: number | null
     installmentTotal?: number | null
@@ -19071,6 +19104,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     sourcePlanId?: string | null
     installmentIndex?: number | null
@@ -19672,6 +19706,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     installmentIndex?: number | null
     installmentTotal?: number | null
@@ -19691,6 +19726,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     sourcePlanId?: string | null
     installmentIndex?: number | null
@@ -19751,6 +19787,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
     installmentTotal?: NullableIntFieldUpdateOperationsInput | number | null
@@ -19770,6 +19807,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sourcePlanId?: NullableStringFieldUpdateOperationsInput | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
@@ -20027,6 +20065,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     installmentIndex?: number | null
     installmentTotal?: number | null
@@ -20046,6 +20085,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     installmentIndex?: number | null
     installmentTotal?: number | null
@@ -20604,6 +20644,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     installmentIndex?: number | null
     installmentTotal?: number | null
@@ -20623,6 +20664,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     sourcePlanId?: string | null
     installmentIndex?: number | null
@@ -20689,6 +20731,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
     installmentTotal?: NullableIntFieldUpdateOperationsInput | number | null
@@ -20708,6 +20751,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sourcePlanId?: NullableStringFieldUpdateOperationsInput | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
@@ -20724,6 +20768,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     sourcePlanId?: string | null
     installmentIndex?: number | null
@@ -20784,6 +20829,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
     installmentTotal?: NullableIntFieldUpdateOperationsInput | number | null
@@ -20802,6 +20848,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sourcePlanId?: NullableStringFieldUpdateOperationsInput | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
@@ -20819,6 +20866,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sourcePlanId?: NullableStringFieldUpdateOperationsInput | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
@@ -20986,6 +21034,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     sourcePlanId?: string | null
     installmentIndex?: number | null
@@ -21017,6 +21066,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
     installmentTotal?: NullableIntFieldUpdateOperationsInput | number | null
@@ -21035,6 +21085,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sourcePlanId?: NullableStringFieldUpdateOperationsInput | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
@@ -21052,6 +21103,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     sourcePlanId?: NullableStringFieldUpdateOperationsInput | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
@@ -21262,6 +21314,7 @@ export namespace Prisma {
     description?: string | null
     amountCents: number
     dueDate: Date | string
+    settlementDueDate?: Date | string | null
     paidAt?: Date | string | null
     installmentIndex?: number | null
     installmentTotal?: number | null
@@ -21307,6 +21360,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
     installmentTotal?: NullableIntFieldUpdateOperationsInput | number | null
@@ -21326,6 +21380,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
     installmentTotal?: NullableIntFieldUpdateOperationsInput | number | null
@@ -21343,6 +21398,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     amountCents?: IntFieldUpdateOperationsInput | number
     dueDate?: DateTimeFieldUpdateOperationsInput | Date | string
+    settlementDueDate?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     paidAt?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     installmentIndex?: NullableIntFieldUpdateOperationsInput | number | null
     installmentTotal?: NullableIntFieldUpdateOperationsInput | number | null
