@@ -6,6 +6,9 @@ on:
       - "v*"
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build-windows-installer:
     name: Build Windows installer
@@ -17,12 +20,12 @@ jobs:
       asset_name: ${{ steps.detect.outputs.asset_name }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -56,7 +59,7 @@ jobs:
           "hashes=$base64" >> $env:GITHUB_OUTPUT
 
       - name: Upload installer artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: windows-installer
           path: ${{ steps.detect.outputs.asset_path }}
