@@ -1,6 +1,6 @@
 {
   "name": "financial",
-  "version": "0.1.0",
+  "version": "0.1.6",
   "private": true,
   "description": "Personal finance desktop app (100% local) with Electron, React, Prisma and SQLite",
   "main": "main/main.js",
