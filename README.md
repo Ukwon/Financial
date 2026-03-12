@@ -7,7 +7,7 @@ Aplicativo desktop de finanças pessoais 100% local (offline-first), sem servido
 Baixe e instale a versão mais recente:
 
 - **Página de releases:** https://github.com/Ukwon/Financial/releases
-- **Download direto do instalador (`.exe`):** https://github.com/Ukwon/Financial/releases/download/v0.1.0/Financial.Setup.0.1.0.exe
+- **Download direto do instalador (`.exe`):** https://github.com/Ukwon/Financial/releases/download/v0.1.6/Financial.Setup.0.1.0.exe
 
 ## Demonstração visual
 
