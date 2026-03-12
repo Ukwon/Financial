@@ -16,8 +16,7 @@ jobs:
     permissions:
       contents: read
     outputs:
-      hashes: ${{ steps.hash.outputs.hashes }}
-      asset_name: ${{ steps.detect.outputs.asset_name }}
+      subjects: ${{ steps.subjects.outputs.base64_subjects }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -33,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build app assets
+        run: npm run build
+
       - name: Build Windows installer
         run: npx electron-builder --win nsis --publish never
 
@@ -45,24 +47,30 @@ jobs:
             throw "Installer not found in release/."
           }
           "asset_path=$($asset.FullName)" >> $env:GITHUB_OUTPUT
-          "asset_name=$($asset.Name)" >> $env:GITHUB_OUTPUT
+
+      - name: Generate hash file
+        shell: bash
+        run: |
+          sha256sum "${{ steps.detect.outputs.asset_path }}" > subjects.txt
 
       - name: Generate SLSA subjects
-        id: hash
-        shell: pwsh
-        run: |
-          $path = "${{ steps.detect.outputs.asset_path }}"
-          $name = "${{ steps.detect.outputs.asset_name }}"
-          $hash = (Get-FileHash -Path $path -Algorithm SHA256).Hash.ToLower()
-          $line = "$hash  $name"
-          $base64 = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($line))
-          "hashes=$base64" >> $env:GITHUB_OUTPUT
+        id: subjects
+        uses: slsa-framework/slsa-github-generator/actions/generator/generic/create-base64-subjects-from-file@v2.1.0
+        with:
+          path: subjects.txt
 
       - name: Upload installer artifact
         uses: actions/upload-artifact@v6
         with:
           name: windows-installer
           path: ${{ steps.detect.outputs.asset_path }}
+          if-no-files-found: error
+
+      - name: Upload subjects artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: windows-installer-subjects
+          path: subjects.txt
           if-no-files-found: error
 
   provenance:
@@ -72,9 +80,8 @@ jobs:
     permissions:
       actions: read
       id-token: write
-      contents: write
+      contents: read
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
     with:
-      base64-subjects: ${{ needs.build-windows-installer.outputs.hashes }}
-      provenance-name: ${{ needs.build-windows-installer.outputs.asset_name }}.intoto.jsonl
-      upload-assets: true
+      base64-subjects: ${{ needs.build-windows-installer.outputs.subjects }}
+      provenance-name: financial-windows.intoto.jsonl
